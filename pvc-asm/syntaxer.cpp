@@ -2,6 +2,16 @@
 
 #include "utility.h"
 
+uint16_t Mnemonic::describeMnemonics(void) const
+{
+	uint16_t result = 0;
+	size_t i = 0;
+	for (auto&& m : mnemonics)
+		result += m.index() << i++ * 4;
+
+	return result;
+}
+
 std::vector<SyntaxUnit> Syntaxer::syntaxParse(const std::vector<Lexema>& lexems)
 {
 	std::vector<SyntaxUnit> mnemonics;
@@ -41,6 +51,8 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(const std::vector<Lexema>& lexems)
 						mnemonic.mnemonics.emplace_back(IndirectAddress(Register(std::get<std::string>(op[0].lexemas))));
 					else if (op[0].id == LexemID::LABEL_USE)
 						mnemonic.mnemonics.emplace_back(IndirectAddress(LabelUse(std::get<std::string>(op[0].lexemas))));
+					else if (op[0].id == LexemID::NUMBER)
+						mnemonic.mnemonics.emplace_back(IndirectAddress(Constant(std::get<int>(op[0].lexemas))));
 				if (op.size() == 3)
 				{
 					const auto operation = std::get<std::string>(op[1].lexemas)[0] == '+' ? 1 : -1;
@@ -80,7 +92,7 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(const std::vector<Lexema>& lexems)
 				mnemonic.mnemonics.emplace_back(String(std::get<std::string>(lexemas)));
 			}
 			break;
-		default: ;
+		default: break;
 		}
 	
 	}

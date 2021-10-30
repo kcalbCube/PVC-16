@@ -1,0 +1,20 @@
+.org 0h
+vec:
+db 0h 0h @exit
+
+.org 80h
+data:
+	s1: db "Oh, spaced, fuck you bitch! "
+	s2: db "Hello, world!"
+	s3: db "Hello, fucking world!"
+	s4: db "Hi!"
+start: 
+	mov %a @s1
+	mov %b @s2
+	mov %c @s3
+	mov %d @s4
+	int 1h
+	
+.org FFFh
+exit:
+	int 0h

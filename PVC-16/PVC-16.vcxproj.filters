@@ -53,5 +53,11 @@
     <ClInclude Include="utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="registers_define.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="opcode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

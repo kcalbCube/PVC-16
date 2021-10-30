@@ -8,7 +8,7 @@ class Tokenizer
 	/// <summary>
 	/// handles quotes, spaces.
 	/// </summary>
-	static std::vector<Token> coreTokenize(const std::string& src);
+	static std::vector<Token> coreTokenize(std::string src);
 
 	/// <summary>
 	/// handles operators, merges some.

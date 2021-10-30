@@ -140,12 +140,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="compiler.cpp" />
     <ClCompile Include="lexer.cpp" />
     <ClCompile Include="pvc-asm.cpp" />
     <ClCompile Include="syntaxer.cpp" />
     <ClCompile Include="tokenizer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="compiler.h" />
     <ClInclude Include="lexer.h" />
     <ClInclude Include="syntaxer.h" />
     <ClInclude Include="tokenizer.h" />

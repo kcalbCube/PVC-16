@@ -2,9 +2,7 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
-#include <string>
-#include <vector>
-#include "map.h"
+#include "registers_define.h"
 
 union Register
 {
@@ -39,21 +37,6 @@ inline uint8_t updateStatus(const uint8_t result)
 
 	return result;
 }
-
-#define REGISTERS_LIST A, B, C, D, E, SI, BP, SP, IP
-#define LREGISTERS_LIST AH, AL, BH, BL, CH, CL, DH, DL, EH, EL, SIH, SIL, BPH, BPL, SPH, SPL, IPH, IPL
-
-enum RegisterID
-{
-	REGISTERS_LIST,
-	LREGISTERS_LIST
-};
-
-const static std::string registerId2registerName[] = {
-#define _MAP(x) #x
-	MAP_LIST(_MAP, REGISTERS_LIST),
-	MAP_LIST(_MAP, LREGISTERS_LIST)
-};
 
 static Register registers[AH];
 

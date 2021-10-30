@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include "registers.h"
+#include <vector>
 
 using addr_t = uint16_t;
 
