@@ -21,20 +21,35 @@ void process(void)
 		}
 		break;
 
-	case MOV_RMC:
+	case MOV_RM:
 		{
 			const auto id = static_cast<RegisterID>(mc.read8(ip));
-			(void)mc.readInRegister(mc.read16(ip + 1), id);
-			ip += 3;
+			union
+			{
+				SIB sib;
+				uint8_t u8;
+			};
+			u8 = mc.read8(ip + 1);
+
+			const uint16_t disp = sib.disp ? mc.read16(ip + 2) : 0;
+			(void)mc.readInRegister(readAddress(sib, disp), id);
+			ip += 2 + sib.disp * 2;
 		}
 		break;
 
-	case MOV_MCR:
+	case MOV_MR:
 		{
-			const addr_t addr = mc.read16(ip);
-			const auto id = static_cast<RegisterID>(mc.read8(ip + 2));
-			mc.writeFromRegister(addr, id);
-			ip += 3;
+			union
+			{
+				SIB sib;
+				uint8_t u8;
+			};
+			u8 = mc.read8(ip);
+			const auto id = static_cast<RegisterID>(mc.read8(ip + 1));
+
+			const uint16_t disp = sib.disp ? mc.read16(ip + 2) : 0;
+			mc.writeFromRegister(readAddress(sib, disp), id);
+			ip += 2 + sib.disp * 2;
 		}
 		break;
 
@@ -61,4 +76,10 @@ void process(void)
 		break;
 	default: break;
 	}
+}
+
+uint16_t readAddress(SIB sib, const uint16_t disp)
+{
+	return static_cast<uint16_t>((sib.index ? readRegister(getSIBindex(sib)) : 0) * (1 << sib.scale) +
+		readRegister(getSIBbase(sib)) + disp);
 }

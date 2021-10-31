@@ -5,6 +5,8 @@
 #include "syntaxer.h"
 #include <string>
 
+#include "../PVC-16/opcode.h"
+
 class Compiler
 {
 	std::map<std::string, uint16_t> symbols;
@@ -22,6 +24,8 @@ class Compiler
 	void write(uint16_t ip, uint8_t data);
 	void write16(uint16_t ip, uint16_t data);
 	void writeLabel(const std::string& label);
+
+	SIB generateSIB(const IndirectAddress& ia, bool& isDisp);
 
 public:
 	void compileMnemonic(const Mnemonic& mnemonic);

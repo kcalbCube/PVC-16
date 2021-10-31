@@ -116,7 +116,8 @@ int main(void)
                 }
             }
 
-            std::copy(std::istream_iterator<char>(input), std::istream_iterator<char>(), mc.data);
+            input.readsome(reinterpret_cast<char*>(mc.data), 0xFFFF);
+            //std::copy(std::istream_iterator<uint8_t>(input), std::istream_iterator<uint8_t>(), mc.data);
         }
 
     }

@@ -38,7 +38,7 @@ inline uint8_t updateStatus(const uint8_t result)
 	return result;
 }
 
-static Register registers[AH];
+inline Register registers[AH];
 
 inline void writeRegister(const RegisterID id, const uint16_t value, bool shouldUpdateStatus = false)
 {
@@ -51,11 +51,6 @@ inline void writeRegister(const RegisterID id, const uint16_t value, bool should
 	const auto isH = (id - AH) % 2 == 0;
 	(isH ? registers[parent].h : registers[parent].l) = 
 		shouldUpdateStatus ? updateStatus(static_cast<uint8_t>(value)) : static_cast<uint8_t>(value);
-}
-
-inline bool isH(const RegisterID id)
-{
-	return id < AH;
 }
 
 inline uint16_t readRegister(const RegisterID id)

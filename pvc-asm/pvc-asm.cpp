@@ -1,4 +1,3 @@
-#include <boost/tokenizer.hpp>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -7,7 +6,6 @@
 #include "lexer.h"
 #include "syntaxer.h"
 #include "tokenizer.h"
-
 using namespace std::literals;
 
 int main(const int argc, char** args)
@@ -19,6 +17,7 @@ int main(const int argc, char** args)
     	inputFile = args[1];
     std::ifstream input(inputFile);
     std::string source; std::getline(input, source, '\0');
+    input.close();
 
     auto tokens = Tokenizer::tokenize(source);
     auto lexemas = Lexer::lex(tokens);
@@ -26,6 +25,6 @@ int main(const int argc, char** args)
     std::ofstream of("output.bin");
     Compiler().compile(syntaxis, of);
     of.flush();
-    of.close();
+    of.close(); // 	mov [%bp + 4] 95
     return 0;
 }

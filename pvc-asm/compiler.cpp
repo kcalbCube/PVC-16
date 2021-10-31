@@ -55,6 +55,13 @@ void Compiler::writeLabel(const std::string& label)
 		write16(lbl);
 }
 
+SIB Compiler::generateSIB(const IndirectAddress& ia, bool& isDisp)
+{
+	isDisp = ia.disp.index() || std::get<Constant>(ia.disp).constant;
+	return SIB(ia.scale, ia.index.name.empty()? NO_REG : registerName2registerId.at(ia.index.name),
+		ia.base.name.empty()? NO_REG : registerName2registerId.at(ia.base.name), isDisp);
+}
+
 void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 {
 	if(mnemonic.name == "INT")
@@ -96,39 +103,71 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 		case constructDescription(REGISTER, INDIRECT_ADDRESS):
 			{
 			auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[1]);
-			std::visit(visit_overload{
-					[](const Register& reg) -> void
-					{
+			auto id = registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name);
+			write(MOV_RM);
+			write(id);
 
+			bool isDisp = false;
+			write(std::bit_cast<uint8_t>(generateSIB(ia, isDisp)));
+			if (isDisp)
+			{
+				std::visit(visit_overload{
+					[&](const Constant constant) -> void
+					{
+						write16(constant.constant);
 					},
 					[&](const LabelUse& lu) -> void
 					{
-						if (ia.second.constant)
-						{
-							// TODO:
-						}
-						else
-						{
-							data.reserve(ip + 4);
-							write(MOV_RMC);
-							write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-							writeLabel(lu.label);
-						}
-					},
-					[&](const Constant& constant) -> void
-					{
-						data.reserve(ip + 4);
-						write(MOV_RMC);
-						write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-						write16(std::get<Constant>(mnemonic.mnemonics[1]).constant);
+						writeLabel(lu.label);
 					}
-				}, ia.first);
+					}, ia.disp);
 			}
+			}
+			break;
+
+		case constructDescription(INDIRECT_ADDRESS, REGISTER):
+		{
+			auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[0]);
+			write(MOV_MR);
+
+			bool isDisp = false;
+			write(std::bit_cast<uint8_t>(generateSIB(ia, isDisp)));
+
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
+
+			if (isDisp)
+			{
+				std::visit(visit_overload{
+					[&](const Constant constant) -> void
+					{
+						write16(constant.constant);
+					},
+					[&](const LabelUse& lu) -> void
+					{
+						writeLabel(lu.label);
+					}
+					}, ia.disp);
+			}
+		}
 
 		default:
 			break;
 
 		}
+	}
+	else if(mnemonic.name == "ADD")
+	{
+		data.reserve(ip + 3);
+		write(ADD);
+		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
+	}
+	else if (mnemonic.name == "SUB")
+	{
+		data.reserve(ip + 3);
+		write(SUB);
+		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
 	}
 }
 

@@ -12,13 +12,7 @@ struct String { std::string string; };
 
 struct IndirectAddress
 {
-	std::variant<Register, LabelUse, Constant> first; Constant second = {0};
-	template<typename T1, typename T2>
-	IndirectAddress(T1 first1, T2 second1)
-		: first{first1}, second{second1} {};
-	template<typename T>
-	explicit IndirectAddress(T first1)
-		: first{first1} {}
+	Register base{}; Register index{}; uint8_t scale = 1; std::variant<Constant, LabelUse> disp;
 };
 
 struct Mnemonic
@@ -51,6 +45,6 @@ template<class... Ts> struct visit_overload : Ts... { using Ts::operator()...; }
 class Syntaxer
 {
 public:
-	static std::vector<SyntaxUnit> syntaxParse(const std::vector<Lexema>& lexems);
+	static std::vector<SyntaxUnit> syntaxParse(std::vector<Lexema>& lexems);
 };
 
