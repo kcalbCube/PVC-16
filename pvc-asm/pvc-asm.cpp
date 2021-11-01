@@ -22,7 +22,7 @@ int main(const int argc, char** args)
     auto tokens = Tokenizer::tokenize(source);
     auto lexemas = Lexer::lex(tokens);
     auto syntaxis = Syntaxer::syntaxParse(lexemas);
-    std::ofstream of("output.bin");
+    std::ofstream of("output.bin", std::ios::binary);
     Compiler().compile(syntaxis, of);
     of.flush();
     of.close(); // 	mov [%bp + 4] 95

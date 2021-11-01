@@ -16,6 +16,7 @@ union Register
 static struct StatusRegister
 {
 	bool zero : 1;
+	bool greater : 1;
 	bool sign : 1;
 	bool interruptEnable : 1;
 
@@ -32,7 +33,7 @@ inline uint16_t updateStatus(const uint16_t result)
 
 inline uint8_t updateStatus(const uint8_t result)
 {
-	status.zero = !result;
+	status.zero = result == 0x0;
 	status.sign = result & 1 << 8;
 
 	return result;

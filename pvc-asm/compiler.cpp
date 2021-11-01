@@ -46,8 +46,8 @@ void Compiler::writeLabel(const std::string& label)
 {
 	if (const auto lbl = findLabel(label); lbl == 0xFFFF)
 	{
-		if (label.starts_with('.'))
-			abort(); // TODO: add message
+		//if (label.starts_with('.'))
+			//abort(); // TODO: add message
 		delayedSymbols[label].push_back(ip);
 		ip += 2;
 	}
@@ -149,6 +149,7 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 					}, ia.disp);
 			}
 		}
+		break;
 
 		default:
 			break;
@@ -158,16 +159,102 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 	else if(mnemonic.name == "ADD")
 	{
 		data.reserve(ip + 3);
-		write(ADD);
-		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
+		switch (mnemonic.describeMnemonics())
+		{
+		case constructDescription(REGISTER, REGISTER):
+			write(ADD);
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
+			break;
+
+		case constructDescription(REGISTER, CONSTANT):
+			write(ADD_C);
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+			write16(std::get<Constant>(mnemonic.mnemonics[1]).constant);
+			break;
+
+		case constructDescription(REGISTER, LABEL):
+			write(ADD_C);
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+			writeLabel(std::get<LabelUse>(mnemonic.mnemonics[1]).label);
+			break;
+
+		default: abort();
+		}
 	}
 	else if (mnemonic.name == "SUB")
 	{
 		data.reserve(ip + 3);
-		write(SUB);
+		switch (mnemonic.describeMnemonics())
+		{
+		case constructDescription(REGISTER, REGISTER):
+			write(SUB);
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
+			break;
+
+		case constructDescription(REGISTER, CONSTANT):
+			write(SUB_C);
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+			write16(std::get<Constant>(mnemonic.mnemonics[1]).constant);
+			break;
+
+		case constructDescription(REGISTER, LABEL):
+			write(SUB_C);
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+			writeLabel(std::get<LabelUse>(mnemonic.mnemonics[1]).label);
+			break;
+
+		default: abort();
+		}
+	}
+	else if(mnemonic.name == "INC")
+	{
+		write(INC);
 		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
+	}
+	else if(mnemonic.name == "DEC")
+	{
+		write(DEC);
+		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+	}
+	else if(mnemonic.name[0] == 'J') // FIXME: can break if J-starting not-jump opcodes present.
+	{
+		static std::map<std::string, Opcode> map = {
+#define MAKE_JUMP_OPCODE(x) {#x, x}
+	MAP_LIST(MAKE_JUMP_OPCODE, JMP, JZ, JNZ, JG, JNG, JGZ)
+		};
+#undef MAKE_JUMP_OPCODE
+		write(map[mnemonic.name]);
+		switch(mnemonic.describeMnemonics())
+		{
+		case constructDescription(CONSTANT):
+			write16(std::get<Constant>(mnemonic.mnemonics[0]).constant);
+			break;
+
+		case constructDescription(LABEL):
+			writeLabel(std::get<LabelUse>(mnemonic.mnemonics[0]).label);
+			break;
+
+		default: abort();
+		}
+	}
+	else if(mnemonic.name == "CMP")
+	{
+	switch (mnemonic.describeMnemonics())
+	{
+		case constructDescription(REGISTER, CONSTANT):
+			write(CMP_RC);
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+			write16(std::get<Constant>(mnemonic.mnemonics[1]).constant);
+			break;
+
+		case constructDescription(REGISTER, REGISTER):
+			//writeLabel(std::get<LabelUse>(mnemonic.mnemonics[0]).label);
+			break;
+
+		default: abort();
+	}
 	}
 }
 
@@ -212,17 +299,19 @@ void Compiler::compile(std::vector<SyntaxUnit>& syntax, std::ostream& output)
 				},
 				[&](const LabelDefinition& ld) -> void
 				{
-					if(ld.label.starts_with('.'))
-					{
-						assert(!currentSymbol.empty());
-						localSymbols[currentSymbol][ld.label] = ip;
-						return;
-					}
-
 					for (auto&& ds : delayedSymbols[ld.label])
-						write16(ds, ip);
-					delayedSymbols.erase(ld.label);
-					symbols[currentSymbol = ld.label] = ip;
+							write16(ds, ip);
+						delayedSymbols.erase(ld.label);
+					if(ld.label.starts_with('.'))
+						localSymbols[currentSymbol][ld.label] = ip;
+					else
+					{
+						symbols[currentSymbol = ld.label] = ip;
+						std::erase_if(delayedSymbols, [](auto x) -> bool
+							{
+								return x.first.starts_with('.');
+							});
+					}
 				}
 			}, su);
 

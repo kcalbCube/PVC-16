@@ -48,11 +48,13 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 			{
 				assert(inMnemonic);
 				auto&& op = std::get<std::vector<Lexema>>(lexemas);
-				if (op.size() == 1) // %a
+				switch (op.size())
 				{
-					if (op[0].id == LexemID::REGISTER)
+				case 1: // %a
+					switch (op[0].id)
 					{
-						if (isSIBbase(registerName2registerId.at( std::get<std::string>(op[0].lexemas))))
+					case LexemID::REGISTER:
+						if (isSIBbase(registerName2registerId.at(std::get<std::string>(op[0].lexemas))))
 							mnemonic.mnemonics.emplace_back(IndirectAddress{
 								.base = Register(std::get<std::string>(op[0].lexemas))
 								});
@@ -60,22 +62,31 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 							mnemonic.mnemonics.emplace_back(IndirectAddress{
 								.index = Register(std::get<std::string>(op[0].lexemas))
 								});
-					}
-					else if (op[0].id == LexemID::LABEL_USE)
+
+						break;
+					case LexemID::LABEL_USE:
 						mnemonic.mnemonics.emplace_back(IndirectAddress{
 							.disp = LabelUse(std::get<std::string>(op[0].lexemas))
-							});
-					else if (op[0].id == LexemID::NUMBER)
+								});
+						break;
+					case LexemID::NUMBER:
 						mnemonic.mnemonics.emplace_back(IndirectAddress{
 							.disp = Constant(std::get<int>(op[0].lexemas))
-							});
-				}
-				else if (op.size() == 3) // %a + %b
+								});
+						break;
+					default: abort();
+					}
+					break;
+				case 3:// %a + %b
 				{
-					if (const auto operation = std::get<std::string>(op[1].lexemas)[0]; operation == '+')
+					switch (const auto operation = std::get<std::string>(op[1].lexemas)[0]; operation)
 					{
-						if (op[0].id == LexemID::REGISTER && op[2].id == LexemID::REGISTER)
+					case '+':
+						if (op[0].id != LexemID::REGISTER)
+							abort();
+						switch (op[2].id)
 						{
+						case LexemID::REGISTER:
 							if (isSIBbase(registerName2registerId.at(std::get<std::string>(op[0].lexemas))))
 								mnemonic.mnemonics.emplace_back(IndirectAddress{
 									.base = Register(std::get<std::string>(op[0].lexemas)),
@@ -86,9 +97,8 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 									.base = Register(std::get<std::string>(op[2].lexemas)),
 									.index = Register(std::get<std::string>(op[0].lexemas))
 									});
-						}
-						else if (op[0].id == LexemID::REGISTER && op[2].id == LexemID::NUMBER)
-						{
+							break;
+						case LexemID::NUMBER:
 							if (isSIBbase(registerName2registerId.at(std::get<std::string>(op[0].lexemas))))
 								mnemonic.mnemonics.emplace_back(IndirectAddress{
 									.base = Register(std::get<std::string>(op[0].lexemas)),
@@ -99,9 +109,8 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 									.index = Register(std::get<std::string>(op[0].lexemas)),
 									.disp = Constant(std::get<int>(op[2].lexemas))
 									});
-						}
-						else if (op[0].id == LexemID::REGISTER && op[2].id == LexemID::LABEL_USE)
-						{
+							break;
+						case LexemID::LABEL_USE:
 							if (isSIBbase(registerName2registerId.at(std::get<std::string>(op[0].lexemas))))
 								mnemonic.mnemonics.emplace_back(IndirectAddress{
 									.base = Register(std::get<std::string>(op[0].lexemas)),
@@ -112,9 +121,11 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 								.index = Register(std::get<std::string>(op[0].lexemas)),
 								.disp = LabelUse(std::get<std::string>(op[2].lexemas))
 									});
+							break;
+						default: abort();
 						}
-					}
-					else if (operation == '*')
+						break;
+					case '*':
 					{
 						if (op[0].id == LexemID::NUMBER && op[2].id == LexemID::REGISTER)
 							mnemonic.mnemonics.emplace_back(IndirectAddress{
@@ -122,61 +133,74 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 								.scale = static_cast<uint8_t>(std::get<int>(op[0].lexemas))
 								});
 					}
-				}
-				else if(op.size() == 5) // 8 * %b + %a
-				{
-					/*
-					if(std::get<std::string>(op[1].lexemas) == "+") // %a + 8 * %b
-					{ // transform to normal format
-						std::swap(op[0], op[4]); // %b + 8 * %a
-						std::swap(op[1], op[3]); // %b * 8 + %a
-						std::swap(op[0], op[2]); // 8 * %b + %a
-					}
-					*/
+					break;
 
-					if (op[4].id == LexemID::REGISTER)
-						mnemonic.mnemonics.emplace_back(IndirectAddress{
-							.base  = Register(std::get<std::string>(op[4].lexemas)),
-							.index = Register(std::get<std::string>(op[2].lexemas)),
-							.scale = static_cast<uint8_t>(std::get<int>(op[0].lexemas))
-							});
-					else if (op[4].id == LexemID::NUMBER)
-						mnemonic.mnemonics.emplace_back(IndirectAddress{
-							.index = Register(std::get<std::string>(op[2].lexemas)),
-							.scale = static_cast<uint8_t>(std::get<int>(op[0].lexemas)),
-							.disp = Constant(std::get<int>(op[4].lexemas))
-							});
-					else if (op[4].id == LexemID::LABEL_USE)
-						mnemonic.mnemonics.emplace_back(IndirectAddress{
-							.index = Register(std::get<std::string>(op[2].lexemas)),
-							.scale = static_cast<uint8_t>(std::get<int>(op[0].lexemas)),
-							.disp = LabelUse(std::get<std::string>(op[4].lexemas))
-							});
-				}
-				else if (op.size() == 7) // 8 * %b + %a + FFh
-				{
-					/*
-					if (std::get<std::string>(op[1].lexemas) == "+") // %a + 8 * %b + FFh
-					{ // transform to normal format
-						std::swap(op[0], op[4]); // %b + 8 * %a
-						std::swap(op[1], op[3]); // %b * 8 + %a
-						std::swap(op[0], op[2]); // 8 * %b + %a
+					default: abort(); break;
 					}
-					*/
-					if (op[6].id == LexemID::NUMBER)
-						mnemonic.mnemonics.emplace_back(IndirectAddress{
-							.base = Register(std::get<std::string>(op[4].lexemas)),
-							.index = Register(std::get<std::string>(op[2].lexemas)),
-							.scale = static_cast<uint8_t>(std::get<int>(op[0].lexemas)),
-							.disp = Constant(std::get<int>(op[6].lexemas))
-							});
-					else if (op[6].id == LexemID::LABEL_USE)
-						mnemonic.mnemonics.emplace_back(IndirectAddress{
-							.base = Register(std::get<std::string>(op[4].lexemas)),
-							.index = Register(std::get<std::string>(op[2].lexemas)),
-							.scale = static_cast<uint8_t>(std::get<int>(op[0].lexemas)),
-							.disp = LabelUse(std::get<std::string>(op[6].lexemas))
-							});
+				}
+					break;
+				case 5: // 8 * %b + %a
+#if 0
+						if(std::get<std::string>(op[1].lexemas) == "+") // %a + 8 * %b
+						{ // transform to normal format
+							std::swap(op[0], op[4]); // %b + 8 * %a
+							std::swap(op[1], op[3]); // %b * 8 + %a
+							std::swap(op[0], op[2]); // 8 * %b + %a
+						}
+#endif
+						switch (op[4].id)
+						{
+						case LexemID::REGISTER:
+							mnemonic.mnemonics.emplace_back(IndirectAddress{
+								.base = Register(std::get<std::string>(op[4].lexemas)),
+								.index = Register(std::get<std::string>(op[2].lexemas)),
+								.scale = static_cast<uint8_t>(std::get<int>(op[0].lexemas))
+								});
+							break;
+
+						case LexemID::NUMBER:
+							mnemonic.mnemonics.emplace_back(IndirectAddress{
+								.index = Register(std::get<std::string>(op[2].lexemas)),
+								.scale = static_cast<uint8_t>(std::get<int>(op[0].lexemas)),
+								.disp = Constant(std::get<int>(op[4].lexemas))
+								});
+							break;
+
+						case LexemID::LABEL_USE:
+							mnemonic.mnemonics.emplace_back(IndirectAddress{
+								.index = Register(std::get<std::string>(op[2].lexemas)),
+								.scale = static_cast<uint8_t>(std::get<int>(op[0].lexemas)),
+								.disp = LabelUse(std::get<std::string>(op[4].lexemas))
+								});
+							break;
+
+						default: abort();
+						}
+					break;
+				case 7: // 8 * %b + %a + FFh
+#if 0
+						if (std::get<std::string>(op[1].lexemas) == "+") // %a + 8 * %b + FFh
+						{ // transform to normal format
+							std::swap(op[0], op[4]); // %b + 8 * %a
+							std::swap(op[1], op[3]); // %b * 8 + %a
+							std::swap(op[0], op[2]); // 8 * %b + %a
+						}
+#endif
+						if (op[6].id == LexemID::NUMBER)
+							mnemonic.mnemonics.emplace_back(IndirectAddress{
+								.base = Register(std::get<std::string>(op[4].lexemas)),
+								.index = Register(std::get<std::string>(op[2].lexemas)),
+								.scale = static_cast<uint8_t>(std::get<int>(op[0].lexemas)),
+								.disp = Constant(std::get<int>(op[6].lexemas))
+								});
+						else if (op[6].id == LexemID::LABEL_USE)
+							mnemonic.mnemonics.emplace_back(IndirectAddress{
+								.base = Register(std::get<std::string>(op[4].lexemas)),
+								.index = Register(std::get<std::string>(op[2].lexemas)),
+								.scale = static_cast<uint8_t>(std::get<int>(op[0].lexemas)),
+								.disp = LabelUse(std::get<std::string>(op[6].lexemas))
+								});
+						break;
 				}
 					
 			}

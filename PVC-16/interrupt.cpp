@@ -11,7 +11,7 @@ void interrupt(const uint8_t interrupt)
 		break;
 
 	case DOUT:
-		std::cout << static_cast<char>(readRegister(AL)) << std::endl;
+		std::cout << static_cast<char>(readRegister(AL));
 		break;
 	default:
 

@@ -1,21 +1,17 @@
 .org 80h
 data:
-	db "Hello, world!"
+	db "Hello, world!\n"
+	db 0
 start:
 	mov %c 1h
 	mov %bp @data
 	mov %si 0
-	
-	mov %al [%si + %bp]
-	add %si %c
-	int 5h
-	
-	mov %al [%si + %bp]
-	add %si %c
-	int 5h
-	
-	mov %al [%si + %bp]
-	add %si %c
-	int 5h
-	
+	.loop:
+		mov %al [%si + %bp]
+		inc %si
+		cmp %al 0h
+		jz @.exit
+		int 5h
+		jmp @.loop
+	.exit:
 	int 0h

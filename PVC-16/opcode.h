@@ -22,10 +22,19 @@ enum Opcode
 
 	INT, // INT %int8
 
-	CMP_RR, // CMP %a8 %b8
+	CMP_RC, // CMP %a8 %src16
 
 
 	JMP, // JMP %dest16
+
+	JZ, // [jumpop] %dest16 
+	JNZ,
+
+	JG,
+	JNG,
+	JGZ,
+
+	BRK = 0xCC, // BRK
 };
 
 #pragma pack(push, 1)
