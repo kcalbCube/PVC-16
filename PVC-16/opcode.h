@@ -7,8 +7,8 @@ enum Opcode
 	MOV_RR, // MOV_RR %dest8 %src8
 	MOV_RC, // MOV_RC %dest8 [src]16
 
-	MOV_RM, // MOV_RMÑ %dest8 %sib8(src) ?disp(src)
-	MOV_MR, // MOV_MCR %sib8(dest) %src8 ?disp(dest)
+	MOV_RM, // MOV_RMÑ %dest8 %sib8(src) ?disp(src)16
+	MOV_MR, // MOV_MCR %sib8(dest) %src8 ?disp(dest)16
 
 	ADD, // ADD %dest8 %src8
 	SUB, // SUB %dest8 %src8

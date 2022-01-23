@@ -6,6 +6,7 @@
 #include "decoder.h"
 #include "interrupt.h"
 #include <fstream>
+#include <boost/algorithm/string.hpp>
 
 #include "utility.h"
 
@@ -67,23 +68,11 @@ int main(void)
             std::cin >> file;
             std::ifstream input(file, std::ios::binary);
 
-            auto string_split = [](const std::string& s, const char delimiter) -> std::vector<std::string>
+            auto string_split = [](const std::string& s, const char* delimiter) -> std::vector<std::string>
             {
-                size_t start = 0;
-                size_t end = s.find_first_of(delimiter);
-
                 std::vector<std::string> output;
 
-                while (end != std::string::npos)
-                {
-                    output.emplace_back(s.substr(start, end - start));
-
-                    if (end == std::string::npos)
-                        break;
-
-                    start = end + 1;
-                    end = s.find_first_of(delimiter, start);
-                }
+                boost::split(output, s, boost::is_any_of(delimiter));
 
                 return output;
             };
@@ -94,21 +83,20 @@ int main(void)
             std::string syms;
             std::copy_n(std::istream_iterator<char>(input), size, std::back_inserter(syms));
             
-            for(auto&& c : string_split(syms, ';'))
+            for(auto&& c : string_split(syms, ";"))
             {
                 int addr = 0;
-                auto&& ss = string_split(c, ':');
-                auto x = syms.substr(ss[0].size()+2);
+                auto&& ss = string_split(c, ":");
 
                 auto a16toi = [](const std::string& str) -> int
                 {
                     int result = 0;
-                    sscanf_s(str.c_str(), "%X%*c", &result);
+                    sscanf_s(str.c_str(), "%X", &result);
                     return result;
                 };
 
 
-                addr = a16toi(x);
+                addr = a16toi(ss[1]);
                 if(ss[0] == "START")
                 {
                     writeRegister(IP, addr);

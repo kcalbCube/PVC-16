@@ -27,7 +27,7 @@ std::vector<Lexema> Lexer::lex(const std::vector<Token>& tokens)
 			state = NONE;
 			lexema = indirectAddress;
 		}
-		else if (token[token.size() - 1] == 'H' || std::isdigit(token[0]))
+		else if (token[token.size() - 1] == 'H' && std::isxdigit(token[0]))
 		{
 			lexema = Lexema(LexemID::NUMBER, a16toi(token));
 		}

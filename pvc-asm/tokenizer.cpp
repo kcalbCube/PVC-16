@@ -23,12 +23,12 @@ void Tokenizer::operatorTokenize(const std::vector<Token> src, std::vector<Token
 
     for(auto&& t : src)
     {
-        boost::tokenizer tok(t, boost::char_separator(",", "\'+-[]()@#%:h "));
+        boost::tokenizer tok(t, boost::char_separator(",", "\'+-[]()@#%: "));
         std::ranges::copy(tok, std::back_inserter(dest));
     }
 
 
-    for(size_t i = 1; i < dest.size() - 1; ++i)
+    for(size_t i = 1; i < dest.size(); ++i)
     {
         if (dest[i] == " ")
         {
@@ -41,7 +41,7 @@ void Tokenizer::operatorTokenize(const std::vector<Token> src, std::vector<Token
             dest[i] += dest[i + 1];
             dest.erase(dest.begin() + i + 1);
         }
-        else if (dest[i] == ":" || dest[i] == "h")
+        else if (dest[i] == ":")
         {
             dest[i - 1] += dest[i];
             dest.erase(dest.begin() + i--);

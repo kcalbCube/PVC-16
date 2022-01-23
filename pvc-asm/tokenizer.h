@@ -16,9 +16,6 @@ class Tokenizer
 	///	<example>
 	///	"[%ax+%bx]" => "[", "%ax", "+", "%bx", "]"
 	///	</example>
-	///	<param name="src">
-	///	pbv
-	///	</param>
 	static void operatorTokenize(std::vector<Token> src, std::vector<Token>& dest);
 public:
 	static std::vector<Token> tokenize(const std::string& src);
