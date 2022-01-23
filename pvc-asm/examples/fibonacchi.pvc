@@ -1,0 +1,29 @@
+.org 80h
+fib:
+	push %b
+	push %d
+	push %c
+	mov %d [%sp + 8h]
+	mov %b 1h
+	mov %a 0h
+	
+	.loop:
+		add %b %a
+		mov %c %a
+		mov %a %b
+		sub %a %c
+		dec %d
+		jnz @.loop
+	
+	pop %c
+	pop %d
+	pop %b
+	ret
+
+start:
+	mov %sp 2000h
+	push Fh
+	call @fib
+	pop
+
+	int 0h

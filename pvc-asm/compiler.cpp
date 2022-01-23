@@ -7,13 +7,13 @@
 
 using namespace std::string_literals;
 
-uint16_t Compiler::findLabel(const std::string& label)
+uint16_t* Compiler::findLabel(const std::string& label)
 {
 	if (localSymbols[currentSymbol].count(label))
-		return localSymbols[currentSymbol][label];
+		return &localSymbols[currentSymbol][label];
 	if (symbols.count(label))
-		return symbols[label];
-	return 0xFFFF;
+		return &symbols[label];
+	return nullptr;
 }
 
 void Compiler::write(uint8_t data)
@@ -44,7 +44,7 @@ void Compiler::write16(uint16_t ip, uint16_t data)
 
 void Compiler::writeLabel(const std::string& label)
 {
-	if (const auto lbl = findLabel(label); lbl == 0xFFFF)
+	if (const auto lbl = findLabel(label); lbl == nullptr)
 	{
 		//if (label.starts_with('.'))
 			//abort(); // TODO: add message
@@ -52,14 +52,32 @@ void Compiler::writeLabel(const std::string& label)
 		ip += 2;
 	}
 	else
-		write16(lbl);
+		write16(*lbl);
 }
 
-SIB Compiler::generateSIB(const IndirectAddress& ia, bool& isDisp)
+SIB Compiler::generateSIB(const IndirectAddress& ia)
 {
-	isDisp = ia.disp.index() || std::get<Constant>(ia.disp).constant;
 	return SIB(ia.scale, ia.index.name.empty()? NO_REG : registerName2registerId.at(ia.index.name),
-		ia.base.name.empty()? NO_REG : registerName2registerId.at(ia.base.name), isDisp);
+		ia.base.name.empty()? NO_REG : registerName2registerId.at(ia.base.name), isDispPresent(ia));
+}
+
+bool Compiler::isDispPresent(const IndirectAddress& ia)
+{
+	return ia.disp.index() || std::get<Constant>(ia.disp).constant;
+}
+
+inline void Compiler::writeDisp(const IndirectAddress& ia)
+{
+	std::visit(visit_overload{
+		[&](const Constant constant) -> void
+			{
+				write16(constant.constant);
+			},
+		[&](const LabelUse& lu) -> void
+			{
+				writeLabel(lu.label);
+			}
+	}, ia.disp);
 }
 
 void Compiler::compileMnemonic(const Mnemonic& mnemonic)
@@ -91,15 +109,6 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 			}
 			break;
 
-		case constructDescription(REGISTER, LABEL):
-			{
-			data.reserve(ip + 4);
-			write(MOV_RC);
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-			writeLabel(std::get<LabelUse>(mnemonic.mnemonics[1]).label);
-			}
-			break;
-
 		case constructDescription(REGISTER, INDIRECT_ADDRESS):
 			{
 			auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[1]);
@@ -107,21 +116,9 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 			write(MOV_RM);
 			write(id);
 
-			bool isDisp = false;
-			write(std::bit_cast<uint8_t>(generateSIB(ia, isDisp)));
-			if (isDisp)
-			{
-				std::visit(visit_overload{
-					[&](const Constant constant) -> void
-					{
-						write16(constant.constant);
-					},
-					[&](const LabelUse& lu) -> void
-					{
-						writeLabel(lu.label);
-					}
-					}, ia.disp);
-			}
+			write(std::bit_cast<uint8_t>(generateSIB(ia)));
+			if (isDispPresent(ia))
+				writeDisp(ia);
 			}
 			break;
 
@@ -129,29 +126,17 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 		{
 			auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[0]);
 			write(MOV_MR);
-
-			bool isDisp = false;
-			write(std::bit_cast<uint8_t>(generateSIB(ia, isDisp)));
+			write(std::bit_cast<uint8_t>(generateSIB(ia)));
 
 			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
 
-			if (isDisp)
-			{
-				std::visit(visit_overload{
-					[&](const Constant constant) -> void
-					{
-						write16(constant.constant);
-					},
-					[&](const LabelUse& lu) -> void
-					{
-						writeLabel(lu.label);
-					}
-					}, ia.disp);
-			}
+			if (isDispPresent(ia))
+				writeDisp(ia);
 		}
 		break;
 
 		default:
+			abort();
 			break;
 
 		}
@@ -182,7 +167,7 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 		default: abort();
 		}
 	}
-	else if (mnemonic.name == "SUB")
+	else if(mnemonic.name == "SUB")
 	{
 		data.reserve(ip + 3);
 		switch (mnemonic.describeMnemonics())
@@ -218,11 +203,11 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 		write(DEC);
 		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
 	}
-	else if(mnemonic.name[0] == 'J') // FIXME: can break if J-starting not-jump opcodes present.
+	else if(mnemonic.name[0] == 'J' || mnemonic.name == "CALL") // FIXME: can break if J-starting not-jump opcodes present.
 	{
 		static std::map<std::string, Opcode> map = {
 #define MAKE_JUMP_OPCODE(x) {#x, x}
-	MAP_LIST(MAKE_JUMP_OPCODE, JMP, JZ, JNZ, JG, JNG, JGZ)
+	MAP_LIST(MAKE_JUMP_OPCODE, JMP, JZ, JNZ, JG, JNG, JGZ, JL, CALL)
 		};
 #undef MAKE_JUMP_OPCODE
 		write(map[mnemonic.name]);
@@ -256,6 +241,76 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 		default: abort();
 	}
 	}
+	else if (mnemonic.name == "PUSHB")
+	{
+		write(PUSH_C8);
+		write(std::get<Constant>(mnemonic.mnemonics[0]).constant);
+	}
+	else if (mnemonic.name == "PUSH")
+	{
+	switch (mnemonic.describeMnemonics())
+	{
+	case constructDescription(CONSTANT):
+		write(PUSH_C);
+		write16(std::get<Constant>(mnemonic.mnemonics[0]).constant);
+		break;
+	case constructDescription(REGISTER):
+		write(PUSH_R);
+		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+		break;
+	}
+	}
+	else if (mnemonic.name == "POP")
+	{
+		switch (mnemonic.describeMnemonics())
+		{
+		case constructDescription(REGISTER):
+			write(POP_R);
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+			break;
+
+		case constructDescription(INDIRECT_ADDRESS):
+		{
+			auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[0]);
+			write(POP_M16);
+
+			write(std::bit_cast<uint8_t>(generateSIB(ia)));
+			if (isDispPresent(ia))
+				writeDisp(ia);
+		}
+			break;
+
+		case constructDescription():
+			write(POP);
+			break;
+		}
+	}
+	else if (mnemonic.name == "POPB")
+	{
+	switch (mnemonic.describeMnemonics())
+	{
+		case constructDescription(INDIRECT_ADDRESS):
+		{
+			auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[0]);
+			write(POP_M8);
+
+			write(std::bit_cast<uint8_t>(generateSIB(ia)));
+			if (isDispPresent(ia))
+				writeDisp(ia);
+		}
+			break;
+		case constructDescription():
+			write(POP8);
+			break;
+	}
+	}
+	else if (mnemonic.name == "RET")
+	{
+	write(RET);
+	}
+	else
+	throw std::exception("Unknown mnemonic");
+
 }
 
 void Compiler::compile(std::vector<SyntaxUnit>& syntax, std::ostream& output)

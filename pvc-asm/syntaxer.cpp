@@ -9,7 +9,7 @@ uint16_t Mnemonic::describeMnemonics(void) const
 	uint16_t result = 0;
 	size_t i = 0;
 	for (auto&& m : mnemonics)
-		result += m.index() << i++ * 4;
+		result += (REGISTER + m.index()) << i++ * 4;
 
 	return result;
 }
@@ -211,14 +211,12 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 				mnemonic.mnemonics.emplace_back(Constant(std::get<int>(lexemas)));
 			}
 			break;
-
 			case LexemID::LABEL_USE:
 				{
 				assert(inMnemonic);
 				mnemonic.mnemonics.emplace_back(LabelUse(std::get<std::string>(lexemas)));
 				}
 				break;
-
 			case LexemID::REGISTER: 
 			{
 				assert(inMnemonic);

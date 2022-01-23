@@ -25,8 +25,8 @@ static struct StatusRegister
 
 inline uint16_t updateStatus(const uint16_t result)
 {
-	status.zero = !result;
-	status.sign = result & 1 << 16;
+	status.zero = result == 0x0;
+	status.sign = result & (1 << 16);
 
 	return result;
 }
@@ -34,7 +34,7 @@ inline uint16_t updateStatus(const uint16_t result)
 inline uint8_t updateStatus(const uint8_t result)
 {
 	status.zero = result == 0x0;
-	status.sign = result & 1 << 8;
+	status.sign = result & (1 << 8);
 
 	return result;
 }

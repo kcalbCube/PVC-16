@@ -4,6 +4,7 @@
 
 #include "interrupt.h"
 #include "utility.h"
+#include "stack.h"
 
 void process(void)
 {
@@ -171,7 +172,95 @@ void process(void)
 			writeRegister(IP, dest);
 	}
 	break;
+	case JL:
+	{
+		const auto dest = mc.read16(ip);
+		ip += 2;
 
+		if (!status.greater && !status.zero)
+		{
+			writeRegister(IP, dest);
+		}
+	}
+	break;
+	case PUSH_R:
+	{
+		StackController::push(static_cast<RegisterID>(mc.read8(ip++)));
+	}
+	break;
+	case PUSH_C8:
+	{
+		StackController::push8(mc.read8(ip++));
+	}
+	break;
+
+	case PUSH_C:
+	{
+		StackController::push16(mc.read16(ip)); ip += 2;
+	}
+	break;
+
+	case POP_M8:
+	{
+		union
+		{
+			SIB sib;
+			uint8_t u8;
+		};
+		u8 = mc.read8(ip++);
+		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
+		mc.write8(readAddress(sib, disp), StackController::pop8());
+		if (sib.disp)
+			ip += 2;
+	}
+	break;
+
+	case POP_M16:
+	{
+		union
+		{
+			SIB sib;
+			uint8_t u8;
+		};
+		u8 = mc.read8(ip++);
+		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
+		mc.write16(readAddress(sib, disp), StackController::pop16());
+		if (sib.disp)
+			ip += 2;
+	}
+	break;
+
+	case POP_R:
+	{
+		StackController::pop(static_cast<RegisterID>(mc.read8(ip++)));
+	}
+	break;
+
+	case POP:
+	{
+		(void)StackController::pop16();
+	}
+	break;
+	case POP8:
+	{
+		(void)StackController::pop8();
+	}
+	break;
+
+	case RET:
+	{
+		StackController::pop(IP);
+	}
+	break;
+
+	case CALL:
+	{
+		auto dest = mc.read16(ip);
+		ip += 2;
+		StackController::push16(ip);
+		writeRegister(IP, dest);
+	}
+	break;
 	case NOP: break;
 	default: break;
 	}

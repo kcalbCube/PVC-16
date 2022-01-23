@@ -149,6 +149,7 @@
     <ClCompile Include="interrupt.cpp" />
     <ClCompile Include="memory.cpp" />
     <ClCompile Include="PVC-16.cpp" />
+    <ClCompile Include="stack.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="decoder.h" />
@@ -159,6 +160,7 @@
     <ClInclude Include="opcode.h" />
     <ClInclude Include="registers.h" />
     <ClInclude Include="registers_define.h" />
+    <ClInclude Include="stack.h" />
     <ClInclude Include="unittesting.h" />
     <ClInclude Include="utility.h" />
   </ItemGroup>

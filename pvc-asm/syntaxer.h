@@ -26,7 +26,7 @@ struct Mnemonic
 
 enum MnemonicDescription
 {
-	REGISTER, CONSTANT, LABEL, INDIRECT_ADDRESS, STRING
+	REGISTER = 1, CONSTANT, LABEL, INDIRECT_ADDRESS, STRING
 };
 
 template<typename... Args>
@@ -40,19 +40,10 @@ constexpr uint16_t constructDescription(Args... args)
 	});
 }
 
-/*
-template<typename... Args>
-constexpr uint16_t constructDescriptionOld(Args... args)
+constexpr uint16_t constructDescription(void)
 {
-	uint16_t result = 0;
-	size_t i = 0;
-	for (auto&& c : { args... })
-		result += c << i++ * 4;
-	return result;
+	return 0;
 }
-
-static_assert(constructDescription(REGISTER, INDIRECT_ADDRESS, CONSTANT) == constructDescriptionOld(REGISTER, INDIRECT_ADDRESS, CONSTANT));
-*/
 
 using SyntaxUnit = std::variant<Mnemonic, LabelDefinition>;
 

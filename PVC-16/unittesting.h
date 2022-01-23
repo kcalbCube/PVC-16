@@ -3,7 +3,7 @@
 #include <iostream>
 #include "registers.h"
 #include <numeric>
-
+#include "stack.h"
 #include "memory.h"
 
 struct RegisterWrite2x8Read16
@@ -94,6 +94,32 @@ struct MemoryWrite16Read2x8
 	}
 };
 
+struct StackWriteReadTest
+{
+	bool work(void)
+	{
+		writeRegister(SP, 0xF00);
+		StackController::push8(0xCB);
+		StackController::push16(0x8AF8);
+		StackController::push16(0x7FA7);
+
+		bool result = true;
+
+		result = result && (StackController::pop16() == 0x7FA7);
+		result = result && (StackController::pop16() == 0x8AF8);
+		result = result && (StackController::pop8() == 0xCB);
+		result = result && (readRegister(SP) == 0xF00);
+
+		return result;
+	}
+
+	void cleanup(void)
+	{
+		mc.fill(0);
+		writeRegister(SP, 0);
+	}
+};
+
 struct UnitTester
 {
 	template<typename T>
@@ -108,6 +134,7 @@ struct UnitTester
 		test<RegisterWrite16Read2x8>();
 		test<MemoryWrite2x8Read16>();
 		test<MemoryWrite16Read2x8>();
+		test<StackWriteReadTest>();
 	}
 
 	UnitTester(void) = delete;

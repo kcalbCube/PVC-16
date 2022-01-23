@@ -22,7 +22,7 @@ enum Opcode
 
 	INT, // INT %int8
 
-	CMP_RC, // CMP %a8 %src16
+	CMP_RC, // CMP_RC %a8 %src16
 
 
 	JMP, // JMP %dest16
@@ -33,6 +33,23 @@ enum Opcode
 	JG,
 	JNG,
 	JGZ,
+
+	JL,
+
+
+	PUSH_R, // PUSH_R %src8
+	PUSH_C, // PUSH_C %src16
+	PUSH_C8,// PUSH_C8 %src8
+
+	POP_R, // POP_R %src8
+	POP, // POP
+	POP8,// POP8
+	POP_M8, // POP_M8  %sib8(dest) ?disp(src)16
+	POP_M16,// POP_M16 %sib8(dest) ?disp(src)16
+
+	RET, // RET
+	CALL, // CALL [dest]16
+
 
 	BRK = 0xCC, // BRK
 };
