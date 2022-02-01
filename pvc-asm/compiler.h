@@ -29,6 +29,7 @@ class Compiler
 	bool isDispPresent(const IndirectAddress& ia);
 
 public:
+	void subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint16_t, Opcode>& variants);
 	void compileMnemonic(const Mnemonic& mnemonic);
 	void compile(std::vector<SyntaxUnit>& syntax, std::ostream& output);
 	void writeDisp(const IndirectAddress& ia);

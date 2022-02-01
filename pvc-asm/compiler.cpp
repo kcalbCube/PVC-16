@@ -80,128 +80,124 @@ inline void Compiler::writeDisp(const IndirectAddress& ia)
 	}, ia.disp);
 }
 
+void Compiler::subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint16_t, Opcode>& variants)
+{
+	auto md = mnemonic.describeMnemonics();
+	Opcode dmnemonic = variants.at(md);
+
+	data.reserve(ip + 5);
+	write(dmnemonic);
+	switch (md)
+	{
+	case constructDescription(REGISTER, REGISTER):
+		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
+		break;
+	case constructDescription(REGISTER, CONSTANT):
+		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+		write16(std::get<Constant>(mnemonic.mnemonics[1]).constant);
+		break;
+	case constructDescription(REGISTER, INDIRECT_ADDRESS):
+	{
+		auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[1]);
+		auto id = registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name);
+		write(id);
+
+		write(std::bit_cast<uint8_t>(generateSIB(ia)));
+		if (isDispPresent(ia))
+			writeDisp(ia);
+	}
+		break;
+	case constructDescription(REGISTER, LABEL):
+		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+		writeLabel(std::get<LabelUse>(mnemonic.mnemonics[1]).label);
+		break;
+
+	case constructDescription(INDIRECT_ADDRESS, REGISTER):
+	{
+		auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[0]);
+		write(std::bit_cast<uint8_t>(generateSIB(ia)));
+
+		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
+
+		if (isDispPresent(ia))
+			writeDisp(ia);
+	}
+	break;
+
+	case constructDescription(CONSTANT):
+		write16(std::get<Constant>(mnemonic.mnemonics[0]).constant);
+		break;
+
+	case constructDescription(LABEL):
+		writeLabel(std::get<LabelUse>(mnemonic.mnemonics[0]).label);
+		break;
+
+	case constructDescription(REGISTER):
+		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+		break;
+
+	case constructDescription(INDIRECT_ADDRESS):
+	{
+		auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[0]);
+
+		write(std::bit_cast<uint8_t>(generateSIB(ia)));
+		if (isDispPresent(ia))
+			writeDisp(ia);
+	}
+		break;
+	case constructDescription():
+		break;
+
+	default:
+		throw std::exception("Subcompiler constructor not present.");
+	}
+}
+
 void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 {
 	if(mnemonic.name == "INT")
 	{
-		write(INT);
-		write(std::get<Constant>(mnemonic.mnemonics[0]).constant);
+		subcompileMnemonic(mnemonic, {
+			{constructDescription(CONSTANT), INT},
+			});
 	}
 	else if(mnemonic.name == "MOV")
 	{
-		switch(mnemonic.describeMnemonics())
-		{
-		case constructDescription(REGISTER, REGISTER):
-			{
-			data.reserve(ip + 3);
-			write(MOV_RR);
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
-			}
-			break;
-
-		case constructDescription(REGISTER, CONSTANT):
-			{
-			data.reserve(ip + 4);
-			write(MOV_RC);
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-			write16(std::get<Constant>(mnemonic.mnemonics[1]).constant);
-			}
-			break;
-
-		case constructDescription(REGISTER, INDIRECT_ADDRESS):
-			{
-			auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[1]);
-			auto id = registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name);
-			write(MOV_RM);
-			write(id);
-
-			write(std::bit_cast<uint8_t>(generateSIB(ia)));
-			if (isDispPresent(ia))
-				writeDisp(ia);
-			}
-			break;
-
-		case constructDescription(INDIRECT_ADDRESS, REGISTER):
-		{
-			auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[0]);
-			write(MOV_MR);
-			write(std::bit_cast<uint8_t>(generateSIB(ia)));
-
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
-
-			if (isDispPresent(ia))
-				writeDisp(ia);
-		}
-		break;
-
-		default:
-			abort();
-			break;
-
-		}
+		subcompileMnemonic(mnemonic, {
+			{constructDescription(REGISTER, REGISTER), MOV_RR},
+			{constructDescription(REGISTER, CONSTANT), MOV_RC},
+			{constructDescription(REGISTER, INDIRECT_ADDRESS), MOV_RM},
+			{constructDescription(INDIRECT_ADDRESS, REGISTER), MOV_MR},
+			});
 	}
 	else if(mnemonic.name == "ADD")
 	{
-		data.reserve(ip + 3);
-		switch (mnemonic.describeMnemonics())
-		{
-		case constructDescription(REGISTER, REGISTER):
-			write(ADD);
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
-			break;
-
-		case constructDescription(REGISTER, CONSTANT):
-			write(ADD_C);
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-			write16(std::get<Constant>(mnemonic.mnemonics[1]).constant);
-			break;
-
-		case constructDescription(REGISTER, LABEL):
-			write(ADD_C);
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-			writeLabel(std::get<LabelUse>(mnemonic.mnemonics[1]).label);
-			break;
-
-		default: abort();
-		}
+		subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER, REGISTER), ADD},
+		{constructDescription(REGISTER, CONSTANT), ADD_C},
+		{constructDescription(REGISTER, LABEL), ADD_C},
+				});
 	}
 	else if(mnemonic.name == "SUB")
 	{
-		data.reserve(ip + 3);
-		switch (mnemonic.describeMnemonics())
-		{
-		case constructDescription(REGISTER, REGISTER):
-			write(SUB);
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
-			break;
-
-		case constructDescription(REGISTER, CONSTANT):
-			write(SUB_C);
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-			write16(std::get<Constant>(mnemonic.mnemonics[1]).constant);
-			break;
-
-		case constructDescription(REGISTER, LABEL):
-			write(SUB_C);
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-			writeLabel(std::get<LabelUse>(mnemonic.mnemonics[1]).label);
-			break;
-
-		default: abort();
-		}
+		subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER, REGISTER), SUB},
+		{constructDescription(REGISTER, CONSTANT), SUB_C},
+		{constructDescription(REGISTER, LABEL), SUB_C},
+					});
 	}
 	else if(mnemonic.name == "INC")
 	{
-		write(INC);
-		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+		subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER), INC},
+					});
 	}
 	else if(mnemonic.name == "DEC")
 	{
-		write(DEC);
-		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+		subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER), DEC},
+			});
 	}
 	else if(mnemonic.name[0] == 'J' || mnemonic.name == "CALL") // FIXME: can break if J-starting not-jump opcodes present.
 	{
@@ -210,103 +206,51 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 	MAP_LIST(MAKE_JUMP_OPCODE, JMP, JZ, JNZ, JG, JNG, JGZ, JL, CALL)
 		};
 #undef MAKE_JUMP_OPCODE
-		write(map[mnemonic.name]);
-		switch(mnemonic.describeMnemonics())
-		{
-		case constructDescription(CONSTANT):
-			write16(std::get<Constant>(mnemonic.mnemonics[0]).constant);
-			break;
-
-		case constructDescription(LABEL):
-			writeLabel(std::get<LabelUse>(mnemonic.mnemonics[0]).label);
-			break;
-
-		default: abort();
-		}
+		auto mnc = map[mnemonic.name];
+		subcompileMnemonic(mnemonic, {
+			{constructDescription(CONSTANT), mnc},
+			{constructDescription(LABEL), mnc}
+			});
 	}
 	else if(mnemonic.name == "CMP")
 	{
-	switch (mnemonic.describeMnemonics())
-	{
-		case constructDescription(REGISTER, CONSTANT):
-			write(CMP_RC);
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-			write16(std::get<Constant>(mnemonic.mnemonics[1]).constant);
-			break;
-
-		case constructDescription(REGISTER, REGISTER):
-			//writeLabel(std::get<LabelUse>(mnemonic.mnemonics[0]).label);
-			break;
-
-		default: abort();
-	}
+		subcompileMnemonic(mnemonic, {
+			{constructDescription(REGISTER, CONSTANT), CMP_RC},
+			});
 	}
 	else if (mnemonic.name == "PUSHB")
 	{
-		write(PUSH_C8);
-		write(std::get<Constant>(mnemonic.mnemonics[0]).constant);
+		subcompileMnemonic(mnemonic, {
+			{constructDescription(CONSTANT), PUSH_C8},
+			});
 	}
 	else if (mnemonic.name == "PUSH")
 	{
-	switch (mnemonic.describeMnemonics())
-	{
-	case constructDescription(CONSTANT):
-		write(PUSH_C);
-		write16(std::get<Constant>(mnemonic.mnemonics[0]).constant);
-		break;
-	case constructDescription(REGISTER):
-		write(PUSH_R);
-		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-		break;
-	}
+		subcompileMnemonic(mnemonic, {
+			{constructDescription(CONSTANT), PUSH_C},
+			{constructDescription(REGISTER), PUSH_R},
+			});
 	}
 	else if (mnemonic.name == "POP")
 	{
-		switch (mnemonic.describeMnemonics())
-		{
-		case constructDescription(REGISTER):
-			write(POP_R);
-			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-			break;
-
-		case constructDescription(INDIRECT_ADDRESS):
-		{
-			auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[0]);
-			write(POP_M16);
-
-			write(std::bit_cast<uint8_t>(generateSIB(ia)));
-			if (isDispPresent(ia))
-				writeDisp(ia);
-		}
-			break;
-
-		case constructDescription():
-			write(POP);
-			break;
-		}
+		subcompileMnemonic(mnemonic, {
+			{constructDescription(INDIRECT_ADDRESS), POP_M16},
+			{constructDescription(REGISTER), POP_R},
+			{constructDescription(), POP}
+			});
 	}
 	else if (mnemonic.name == "POPB")
 	{
-	switch (mnemonic.describeMnemonics())
-	{
-		case constructDescription(INDIRECT_ADDRESS):
-		{
-			auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[0]);
-			write(POP_M8);
-
-			write(std::bit_cast<uint8_t>(generateSIB(ia)));
-			if (isDispPresent(ia))
-				writeDisp(ia);
-		}
-			break;
-		case constructDescription():
-			write(POP8);
-			break;
-	}
+		subcompileMnemonic(mnemonic, {
+			{constructDescription(INDIRECT_ADDRESS), POP_M8},
+			{constructDescription(), POP8}
+			});
 	}
 	else if (mnemonic.name == "RET")
 	{
-	write(RET);
+		subcompileMnemonic(mnemonic, {
+				{constructDescription(), RET}
+			});
 	}
 	else
 	throw std::exception("Unknown mnemonic");

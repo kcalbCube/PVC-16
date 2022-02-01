@@ -266,7 +266,7 @@ void Decoder::process(void)
 	auto opcode = static_cast<Opcode>(mc.read8(ip++));
 
 	if (vmflags.workflowEnabled)
-		printf("%04X: %02X ", ip, opcode);
+		printf("%04X: %02X ", ip-1, opcode);
 
 	switch (getOpcodeFormat(opcode))
 	{
