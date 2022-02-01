@@ -15,7 +15,7 @@ enum RegisterID
 	NO_REG
 };
 
-inline bool isH(const RegisterID id)
+inline bool is16register(const RegisterID id)
 {
 	return id < AH;
 }

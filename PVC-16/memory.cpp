@@ -38,14 +38,14 @@ uint16_t MemoryController::read16(const addr_t addr) const
 
 size_t MemoryController::readInRegister(const addr_t addr, const RegisterID reg) const
 {
-	return isH(reg) ?
+	return is16register(reg) ?
 		       (writeRegister(reg, read16(addr)), 2)
 		       :   (writeRegister(reg, read8(addr)) , 1);
 }
 
 void MemoryController::writeFromRegister(const addr_t addr, const RegisterID reg)
 {
-	isH(reg) ?
+	is16register(reg) ?
 		write16(addr, readRegister(reg))
 		:	write8(addr, readRegister(reg));
 }

@@ -56,7 +56,7 @@ inline void writeRegister(const RegisterID id, const uint16_t value, bool should
 
 inline uint16_t readRegister(const RegisterID id)
 {
-	if(isH(id))
+	if(is16register(id))
 		return registers[static_cast<size_t>(id)].u16;
 	const auto parent = static_cast<RegisterID>((id - AH) / 2);
 	const auto isH = (id - AH) % 2 == 0;
@@ -65,7 +65,7 @@ inline uint16_t readRegister(const RegisterID id)
 
 inline uint16_t& getRegister16(const RegisterID id)
 {
-	assert(isH(id));
+	assert(is16register(id));
 	return registers[static_cast<size_t>(id)].u16;
 }
 

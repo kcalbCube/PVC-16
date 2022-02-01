@@ -52,3 +52,38 @@ inline void registersDump(void)
 	for(auto&& c : {REGISTERS_LIST})
         printf("%4s  %04X\n", registerId2registerName[c].c_str(), readRegister(c));
 }
+
+// Disasm utilities
+inline std::string renderIndirectAddress(SIB sib, uint16_t disp)
+{
+    std::string str = "[";
+    char buffer[9]{};
+    buffer[8] = '\0';
+
+    bool opRequired = false;
+    if (sib.scale)
+    {
+        sprintf_s(buffer, "%d * ", 1 << sib.scale);
+        str += buffer;
+    }
+    if (sib.base)
+    {
+        sprintf_s(buffer, opRequired ? "+ %%%s " : "%%%s ", registerId2registerName[getSIBbase(sib)].c_str());
+        str += buffer;
+        opRequired = true;
+    }
+    if (sib.index)
+    {
+        sprintf_s(buffer, opRequired ? "+ %%%s " : "%%%s ", registerId2registerName[getSIBindex(sib)].c_str());
+        str += buffer;
+        opRequired = true;
+    }
+    if (sib.disp)
+    {
+        sprintf_s(buffer, opRequired ? "+ %04X " : "%04X ", disp);
+        str += buffer;
+        opRequired = true;
+    }
+
+    return str.substr(0, str.size()-1) + "]";
+}

@@ -5,237 +5,236 @@
 #include "interrupt.h"
 #include "utility.h"
 #include "stack.h"
+#include "vmflags.h"
 
-void process(void)
+uint16_t Decoder::readAddress(SIB sib, const uint16_t disp)
 {
-	switch (auto&& ip = getRegister16(IP); static_cast<Opcode>(mc.read8(ip++)))
+	return static_cast<uint16_t>((sib.index ? readRegister(getSIBindex(sib)) : 0) * (1 << sib.scale) +
+		readRegister(getSIBbase(sib)) + disp);
+}
+
+void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
+{
+	switch (opcode)
 	{
-	case MOV_RC:
-		{
-			writeRegister(static_cast<RegisterID>(mc.read8(ip)), mc.read16(ip+1));
-			ip += 3;
-		}
-		break;
 	case MOV_RR:
-		{
-			writeRegister(static_cast<RegisterID>(mc.read8(ip)), readRegister(static_cast<RegisterID>(mc.read8(ip+1))));
-			ip += 2;
-		}
-		break;
-
-	case MOV_RM:
-		{
-			const auto id = static_cast<RegisterID>(mc.read8(ip));
-			union
-			{
-				SIB sib;
-				uint8_t u8;
-			};
-			u8 = mc.read8(ip + 1);
-
-			const uint16_t disp = sib.disp ? mc.read16(ip + 2) : 0;
-			(void)mc.readInRegister(readAddress(sib, disp), id);
-			ip += 2 + sib.disp * 2;
-		}
-		break;
-
-	case MOV_MR:
-		{
-			union
-			{
-				SIB sib;
-				uint8_t u8;
-			};
-			u8 = mc.read8(ip);
-			const auto id = static_cast<RegisterID>(mc.read8(ip + 1));
-
-			const uint16_t disp = sib.disp ? mc.read16(ip + 2) : 0;
-			mc.writeFromRegister(readAddress(sib, disp), id);
-			ip += 2 + sib.disp * 2;
-		}
+		writeRegister(r1, readRegister(r2));
 		break;
 
 	case ADD:
-		{
-			const auto dest = static_cast<RegisterID>(mc.read8(ip++));
-			const auto src = static_cast<RegisterID>(mc.read8(ip++));
-			writeRegister(dest, readRegister(dest) + readRegister(src), true);
-		}
+		if (is16register(r1))
+			updateStatus(static_cast<uint16_t>(getRegister16(r1) += readRegister(r2)));
+		else
+			updateStatus(static_cast<uint8_t>(getRegister8(r1) += readRegister(r2)));
 		break;
 
 	case SUB:
-		{
-			const auto dest = static_cast<RegisterID>(mc.read8(ip++));
-			const auto src = static_cast<RegisterID>(mc.read8(ip++));
-			writeRegister(dest, readRegister(dest) - readRegister(src), true);
-		}
+		if (is16register(r1))
+			updateStatus(static_cast<uint16_t>(getRegister16(r1) -= readRegister(r2)));
+		else
+			updateStatus(static_cast<uint8_t>(getRegister8(r1) -= readRegister(r2)));
+		break;
+				
+	}
+}
+
+void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
+{
+	switch (opcode)
+	{
+	case MOV_RC:
+		writeRegister(r1, constant);
 		break;
 
-	case INT:
-		{
-		interrupt(mc.read8(ip++));
-		}
-		break;
-
-	case BRK:
-		{
-		registersDump();
-		}
-		break;
-
-	case ADD_C: 
-		{
-			const auto dest = static_cast<RegisterID>(mc.read8(ip++));
-			writeRegister(dest, readRegister(dest) + mc.read16(ip), true);
-			ip += 2;
-		}
-		break;
-	case SUB_C:
-		{
-			const auto dest = static_cast<RegisterID>(mc.read8(ip++));
-			writeRegister(dest, readRegister(dest) - mc.read16(ip), true);
-			ip += 2;
-		}
-		break;
-	case INC: 
-		{
-			const auto dest = static_cast<RegisterID>(mc.read8(ip++));
-			writeRegister(dest, readRegister(dest) + 1, true);
-		}
-		break;
-	case DEC:
-		{
-			const auto dest = static_cast<RegisterID>(mc.read8(ip++));
-			writeRegister(dest, readRegister(dest) - 1, true);
-		}
-		break;
-	case CMP_RC: 
-		{
-		const auto a = static_cast<RegisterID>(mc.read8(ip++));
-		const auto b = mc.read16(ip);
-		const auto result = readRegister(a) - b;
-		if (isH(a))
+	case CMP_RC:
+	{
+		const auto result = readRegister(r1) - constant;
+		if (is16register(r1))
 			updateStatus(static_cast<uint16_t>(result));
 		else
 			updateStatus(static_cast<uint8_t>(result));
 		status.greater = result > 0;
+	}
+	break;
 
-		ip += 2;
-		}
+	case ADD_C:
+	{
+		if (is16register(r1))
+			updateStatus(static_cast<uint16_t>(getRegister16(r1) += constant));
+		else
+			updateStatus(static_cast<uint8_t>(getRegister8(r1) += constant));
 		break;
-
-	case JMP:
-	{
-		const auto dest = mc.read16(ip);
-		ip += 2;
-		writeRegister(IP, dest);
 	}
+	case SUB_C:
+	{
+		if (is16register(r1))
+			updateStatus(static_cast<uint16_t>(getRegister16(r1) -= constant));
+		else
+			updateStatus(static_cast<uint8_t>(getRegister8(r1) -= constant));
 		break;
-	case JZ:
-	{
-		const auto dest = mc.read16(ip);
-		ip += 2;
-		if(status.zero)
-			writeRegister(IP, dest);
 	}
-	break;
-	case JNZ:
-	{
-		const auto dest = mc.read16(ip);
-		ip += 2;
-		if(!status.zero)
-			writeRegister(IP, dest);
 	}
-	break;
-	case JG:
-	{
-		const auto dest = mc.read16(ip);
-		ip += 2;
-		if(status.greater)
-			writeRegister(IP, dest);
-	}
-	break;
-	case JNG:
-	{
-		const auto dest = mc.read16(ip);
-		ip += 2;
-		if(!status.greater)
-			writeRegister(IP, dest);
-	}
-	break;
-	case JGZ:
-	{
-		const auto dest = mc.read16(ip);
-		ip += 2;
+}
 
-		if(status.greater || status.zero)
-			writeRegister(IP, dest);
-	}
-	break;
-	case JL:
+void Decoder::processRM(Opcode opcode, RegisterID r1, uint16_t addr)
+{
+	switch (opcode)
 	{
-		const auto dest = mc.read16(ip);
-		ip += 2;
-
-		if (!status.greater && !status.zero)
-		{
-			writeRegister(IP, dest);
-		}
+	case MOV_RM:
+		mc.readInRegister(addr, r1);
+		break;
 	}
-	break;
+}
+
+void Decoder::processR(Opcode opcode, RegisterID r1)
+{
+	switch (opcode)
+	{
+	case INC:
+	{
+		if (is16register(r1))
+			updateStatus(static_cast<uint16_t>(++getRegister16(r1)));
+		else
+			updateStatus(static_cast<uint8_t>(++getRegister8(r1)));
+		break;
+	}
+	case DEC:
+	{
+		if (is16register(r1))
+			updateStatus(static_cast<uint16_t>(--getRegister16(r1)));
+		else
+			updateStatus(static_cast<uint8_t>(--getRegister8(r1)));
+		break;
+	}
+
+	case POP_R:
+	{
+		StackController::pop(r1);
+		break;
+	}
 	case PUSH_R:
 	{
-		StackController::push(static_cast<RegisterID>(mc.read8(ip++)));
+		StackController::push(r1);
+		break;
 	}
-	break;
-	case PUSH_C8:
-	{
-		StackController::push8(mc.read8(ip++));
 	}
-	break;
+}
 
-	case PUSH_C:
+void Decoder::processMR(Opcode opcode, uint16_t addr, RegisterID r1)
+{
+	switch (opcode)
 	{
-		StackController::push16(mc.read16(ip)); ip += 2;
+	case MOV_MR:
+		mc.writeFromRegister(addr, r1);
+		break;
 	}
-	break;
+}
 
+void Decoder::processM(Opcode opcode, uint16_t addr)
+{
+	switch (opcode)
+	{
 	case POP_M8:
 	{
-		union
-		{
-			SIB sib;
-			uint8_t u8;
-		};
-		u8 = mc.read8(ip++);
-		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
-		mc.write8(readAddress(sib, disp), StackController::pop8());
-		if (sib.disp)
-			ip += 2;
+		mc.write8(addr, StackController::pop8());
 	}
 	break;
 
 	case POP_M16:
 	{
-		union
-		{
-			SIB sib;
-			uint8_t u8;
-		};
-		u8 = mc.read8(ip++);
-		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
-		mc.write16(readAddress(sib, disp), StackController::pop16());
-		if (sib.disp)
-			ip += 2;
+		mc.write16(addr, StackController::pop16());
 	}
 	break;
 
-	case POP_R:
+
+	}
+}
+
+void Decoder::processC8(Opcode opcode, uint8_t constant)
+{
+	switch (opcode)
 	{
-		StackController::pop(static_cast<RegisterID>(mc.read8(ip++)));
+	case PUSH_C8:
+	{
+		StackController::push8(constant);
 	}
 	break;
 
+	case INT:
+	{
+		interrupt(constant);
+	}
+	break;
+	}
+}
+
+void Decoder::processC(Opcode opcode, uint16_t constant)
+{
+	switch (opcode)
+	{
+		case PUSH_C:
+		{
+			StackController::push16(constant);
+		}
+		break;
+
+		case JMP:
+		{
+			writeRegister(IP, constant);
+		}
+		break;
+		case JZ:
+		{
+			if (status.zero)
+				writeRegister(IP, constant);
+		}
+		break;
+		case JNZ:
+		{
+			if (!status.zero)
+				writeRegister(IP, constant);
+		}
+		break;
+		case JG:
+		{
+			if (status.greater)
+				writeRegister(IP, constant);
+		}
+		break;
+		case JNG:
+		{
+			if (!status.greater)
+				writeRegister(IP, constant);
+		}
+		break;
+		case JGZ:
+		{
+			if (status.greater || status.zero)
+				writeRegister(IP, constant);
+		}
+		break;
+		case JL:
+		{
+			if (!status.greater && !status.zero)
+				writeRegister(IP, constant);
+		}
+		break;
+
+
+		case CALL:
+		{
+			auto& ip = getRegister16(IP);
+			StackController::push16(ip);
+			ip = constant;
+		}
+		break;
+	}
+}
+
+void Decoder::processJO(Opcode opcode)
+{
+	switch (opcode)
+	{
 	case POP:
 	{
 		(void)StackController::pop16();
@@ -252,22 +251,109 @@ void process(void)
 		StackController::pop(IP);
 	}
 	break;
-
-	case CALL:
+	case BRK:
 	{
-		auto dest = mc.read16(ip);
-		ip += 2;
-		StackController::push16(ip);
-		writeRegister(IP, dest);
+		registersDump();
 	}
 	break;
 	case NOP: break;
-	default: break;
 	}
 }
 
-uint16_t readAddress(SIB sib, const uint16_t disp)
+void Decoder::process(void)
 {
-	return static_cast<uint16_t>((sib.index ? readRegister(getSIBindex(sib)) : 0) * (1 << sib.scale) +
-		readRegister(getSIBbase(sib)) + disp);
+	auto&& ip = getRegister16(IP); 
+	auto opcode = static_cast<Opcode>(mc.read8(ip++));
+
+	if (vmflags.workflowEnabled)
+		printf("%04X: %02X ", ip, opcode);
+
+	switch (getOpcodeFormat(opcode))
+	{
+	case OPCODE_RR:
+	{
+		const auto r1 = static_cast<RegisterID>(mc.read8(ip++));
+		const auto r2 = static_cast<RegisterID>(mc.read8(ip++));
+		if (vmflags.workflowEnabled)
+			printf("%%%s %%%s\n", registerId2registerName[r1].c_str(), registerId2registerName[r2].c_str());
+		processRR(opcode, r1, r2);
+	}
+	break;
+
+	case OPCODE_RC:
+	{
+		const auto r1 = static_cast<RegisterID>(mc.read8(ip++));
+		const auto c = mc.read16(ip);
+		ip += 2;
+		if (vmflags.workflowEnabled)
+			printf("%%%s %04X\n", registerId2registerName[r1].c_str(), (size_t)c);
+		processRC(opcode, r1, c);
+	}
+	break;
+
+	case OPCODE_R:
+	{
+		const auto r1 = static_cast<RegisterID>(mc.read8(ip++));
+		if (vmflags.workflowEnabled)
+			printf("%%%s\n", registerId2registerName[r1].c_str());
+		processR(opcode, r1);
+	}
+	break;
+
+	case OPCODE_RM:
+	{
+		const auto r1 = static_cast<RegisterID>(mc.read8(ip++));
+		const auto sib = std::bit_cast<SIB>(mc.read8(ip++));
+
+		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
+		const uint16_t addr = readAddress(sib, disp);
+		ip += sib.disp * 2;
+		if (vmflags.workflowEnabled)
+			printf("%%%s %s{%04X}\n", registerId2registerName[r1].c_str(), renderIndirectAddress(sib, disp).c_str(), (size_t)addr);
+		processRM(opcode, r1, addr);
+	}
+	break;
+
+	case OPCODE_MR:
+	{
+		const auto sib = std::bit_cast<SIB>(mc.read8(ip++));
+		const auto r1  = static_cast<RegisterID>(mc.read8(ip++));
+		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
+		const uint16_t addr = readAddress(sib, disp);
+		ip += sib.disp * 2;
+		if (vmflags.workflowEnabled)
+			printf("%s{%04X} %%%s\n", renderIndirectAddress(sib, disp).c_str(), (size_t)addr, registerId2registerName[r1].c_str());
+		processMR(opcode, addr, r1);
+
+	}
+
+	case OPCODE_C8:
+	{
+		const auto c8 = mc.read8(ip++);
+		if (vmflags.workflowEnabled)
+			printf("%02X\n", (size_t)c8);
+		processC8(opcode, c8);
+	}
+	break;
+
+	case OPCODE_C:
+	{
+		const auto c = mc.read16(ip);
+		ip += 2;
+		if (vmflags.workflowEnabled)
+			printf("%02X\n", (size_t)c);
+		processC(opcode, c);
+	}
+	break;
+
+	case OPCODE:
+		if (vmflags.workflowEnabled)
+			printf("\n");
+		processJO(opcode);
+		break;
+
+	default:
+		printf("not handled op %X\n", (int)opcode);
+		break;
+	}
 }

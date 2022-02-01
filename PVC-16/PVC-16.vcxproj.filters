@@ -47,9 +47,6 @@
     <ClInclude Include="decoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="unittesting.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="interrupt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -63,6 +60,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="unittesting.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vmflags.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

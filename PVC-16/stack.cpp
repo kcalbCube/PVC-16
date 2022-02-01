@@ -3,7 +3,7 @@
 
 void StackController::push(const RegisterID rid)
 {
-	if (isH(rid))
+	if (is16register(rid))
 		push16(readRegister(rid));
 	else
 		push8(readRegister(rid));
@@ -25,7 +25,7 @@ void StackController::pop(const RegisterID rid)
 {
 	auto&& sp = getRegister16(SP);
 	mc.readInRegister(sp, rid);
-	sp += 1 + isH(rid);
+	sp += 1 + is16register(rid);
 }
 
 uint16_t StackController::pop16(void)

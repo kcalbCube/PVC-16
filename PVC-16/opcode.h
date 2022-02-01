@@ -4,30 +4,30 @@
 enum Opcode
 {
 	NOP,
-	MOV_RR, // MOV_RR %dest8 %src8
-	MOV_RC, // MOV_RC %dest8 [src]16
+	MOV_RR,
+	MOV_RC,
 
-	MOV_RM, // MOV_RMÑ %dest8 %sib8(src) ?disp(src)16
-	MOV_MR, // MOV_MCR %sib8(dest) %src8 ?disp(dest)16
+	MOV_RM,
+	MOV_MR,
 
-	ADD, // ADD %dest8 %src8
-	SUB, // SUB %dest8 %src8
+	ADD,
+	SUB,
 
-	ADD_C, // ADD %dest8 %src16
-	SUB_C, // SUB %dest8 %src16
+	ADD_C,
+	SUB_C,
 
-	INC, // INC %dest8
-	DEC, // DEC %dest8
-
-
-	INT, // INT %int8
-
-	CMP_RC, // CMP_RC %a8 %src16
+	INC,
+	DEC,
 
 
-	JMP, // JMP %dest16
+	INT,
 
-	JZ, // [jumpop] %dest16 
+	CMP_RC,
+
+
+	JMP,
+
+	JZ,
 	JNZ,
 
 	JG,
@@ -37,23 +37,76 @@ enum Opcode
 	JL,
 
 
-	PUSH_R, // PUSH_R %src8
-	PUSH_C, // PUSH_C %src16
-	PUSH_C8,// PUSH_C8 %src8
+	PUSH_R,
+	PUSH_C,
+	PUSH_C8,
 
-	POP_R, // POP_R %src8
-	POP, // POP
-	POP8,// POP8
-	POP_M8, // POP_M8  %sib8(dest) ?disp(src)16
-	POP_M16,// POP_M16 %sib8(dest) ?disp(src)16
+	POP_R,
+	POP,
+	POP8,
+	POP_M8,
+	POP_M16,
 
-	RET, // RET
-	CALL, // CALL [dest]16
+	RET,
+	CALL,
 
 
-	BRK = 0xCC, // BRK
+	BRK = 0xCC,
 };
 
+enum OpcodeFormat
+{
+	OPCODE,
+	OPCODE_RR,
+	OPCODE_RC,
+	OPCODE_RM,
+	OPCODE_MR,
+	OPCODE_R,
+	OPCODE_M,
+	OPCODE_C,
+	OPCODE_C8
+};
+
+#define OPCODEFORMAT_CASE(opcode, format) case opcode: return format; break
+__forceinline OpcodeFormat getOpcodeFormat(Opcode opcode)
+{
+	switch (opcode)
+	{
+		OPCODEFORMAT_CASE(NOP	, OPCODE);
+		OPCODEFORMAT_CASE(MOV_RR, OPCODE_RR);
+		OPCODEFORMAT_CASE(MOV_RC, OPCODE_RC);
+		OPCODEFORMAT_CASE(MOV_RM, OPCODE_RM);
+		OPCODEFORMAT_CASE(MOV_MR, OPCODE_MR);
+		OPCODEFORMAT_CASE(ADD	, OPCODE_RR);
+		OPCODEFORMAT_CASE(SUB	, OPCODE_RR);
+		OPCODEFORMAT_CASE(ADD_C	, OPCODE_RC);
+		OPCODEFORMAT_CASE(SUB_C	, OPCODE_RC);
+		OPCODEFORMAT_CASE(INC	, OPCODE_R);
+		OPCODEFORMAT_CASE(DEC	, OPCODE_R);
+		OPCODEFORMAT_CASE(INT	, OPCODE_C8);
+		OPCODEFORMAT_CASE(CMP_RC, OPCODE_RC);
+		OPCODEFORMAT_CASE(JMP	, OPCODE_C);
+		OPCODEFORMAT_CASE(JZ	, OPCODE_C);
+		OPCODEFORMAT_CASE(JNZ	, OPCODE_C);
+		OPCODEFORMAT_CASE(JG	, OPCODE_C);
+		OPCODEFORMAT_CASE(JNG	, OPCODE_C);
+		OPCODEFORMAT_CASE(JGZ	, OPCODE_C);
+		OPCODEFORMAT_CASE(JL	, OPCODE_C);
+		OPCODEFORMAT_CASE(CALL	, OPCODE_C);
+		OPCODEFORMAT_CASE(PUSH_R, OPCODE_R);
+		OPCODEFORMAT_CASE(PUSH_C, OPCODE_C);
+		OPCODEFORMAT_CASE(PUSH_C8, OPCODE_C8);
+		OPCODEFORMAT_CASE(POP_R	, OPCODE_R);
+		OPCODEFORMAT_CASE(POP	, OPCODE);
+		OPCODEFORMAT_CASE(POP8	, OPCODE);
+		OPCODEFORMAT_CASE(POP_M8, OPCODE_M);
+		OPCODEFORMAT_CASE(POP_M16, OPCODE_M);
+		OPCODEFORMAT_CASE(RET	, OPCODE);
+
+	default: return (OpcodeFormat)0xFF; break;
+	}
+}
+#undef OPCODEFORMAT_CASE
 #pragma pack(push, 1)
 struct SIB
 {
@@ -66,7 +119,7 @@ struct SIB
 	SIB(uint8_t scale, RegisterID index, RegisterID base, uint8_t disp)
 	{
 		this->scale = static_cast<uint8_t>(log2(scale));
-		if(isH(index) || index == NO_REG)
+		if(is16register(index) || index == NO_REG)
 			this->index = index == NO_REG ? 0 : (index + 1);
 		else
 			this->index = (index - AL) / 2;
