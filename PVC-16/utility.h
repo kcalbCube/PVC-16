@@ -26,7 +26,7 @@ inline void hexDump(const char* desc, void* addr, const size_t len, const size_t
                 printf("  %s\n", buff);
 
             // Output the offset.
-            printf("  %04X ", offset + i);
+            printf("  %04X ", (unsigned int)(offset + i));
         }
 
         // Now the hex code for the specific character.

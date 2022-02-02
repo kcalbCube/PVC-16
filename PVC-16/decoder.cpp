@@ -286,7 +286,7 @@ void Decoder::process(void)
 		const auto c = mc.read16(ip);
 		ip += 2;
 		if (vmflags.workflowEnabled)
-			printf("%%%s %04X\n", registerId2registerName[r1].c_str(), (size_t)c);
+			printf("%%%s %04X\n", registerId2registerName[r1].c_str(), (unsigned int)c);
 		processRC(opcode, r1, c);
 	}
 	break;
@@ -309,7 +309,7 @@ void Decoder::process(void)
 		const uint16_t addr = readAddress(sib, disp);
 		ip += sib.disp * 2;
 		if (vmflags.workflowEnabled)
-			printf("%%%s %s{%04X}\n", registerId2registerName[r1].c_str(), renderIndirectAddress(sib, disp).c_str(), (size_t)addr);
+			printf("%%%s %s{%04X}\n", registerId2registerName[r1].c_str(), renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr);
 		processRM(opcode, r1, addr);
 	}
 	break;
@@ -322,7 +322,7 @@ void Decoder::process(void)
 		const uint16_t addr = readAddress(sib, disp);
 		ip += sib.disp * 2;
 		if (vmflags.workflowEnabled)
-			printf("%s{%04X} %%%s\n", renderIndirectAddress(sib, disp).c_str(), (size_t)addr, registerId2registerName[r1].c_str());
+			printf("%s{%04X} %%%s\n", renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr, registerId2registerName[r1].c_str());
 		processMR(opcode, addr, r1);
 
 	}
@@ -331,7 +331,7 @@ void Decoder::process(void)
 	{
 		const auto c8 = mc.read8(ip++);
 		if (vmflags.workflowEnabled)
-			printf("%02X\n", (size_t)c8);
+			printf("%02X\n", (unsigned int)c8);
 		processC8(opcode, c8);
 	}
 	break;
@@ -341,7 +341,7 @@ void Decoder::process(void)
 		const auto c = mc.read16(ip);
 		ip += 2;
 		if (vmflags.workflowEnabled)
-			printf("%02X\n", (size_t)c);
+			printf("%02X\n", (unsigned int)c);
 		processC(opcode, c);
 	}
 	break;
