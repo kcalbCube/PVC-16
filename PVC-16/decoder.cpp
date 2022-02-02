@@ -7,6 +7,8 @@
 #include "stack.h"
 #include "vmflags.h"
 
+#include <magic_enum.hpp>
+
 uint16_t Decoder::readAddress(SIB sib, const uint16_t disp)
 {
 	return static_cast<uint16_t>((sib.index ? readRegister(getSIBindex(sib)) : 0) * (1 << sib.scale) +
@@ -266,7 +268,13 @@ void Decoder::process(void)
 	auto opcode = static_cast<Opcode>(mc.read8(ip++));
 
 	if (vmflags.workflowEnabled)
-		printf("%04X: %02X ", ip-1, opcode);
+	{
+		if(auto&& opc = magic_enum::enum_name(opcode); opc.empty())
+			printf("%04X: %02-6X ", (unsigned int)(ip - 1), (unsigned int)opcode);
+		else
+			printf("%04X: %-6s ", (unsigned int)(ip - 1), std::string(opc).c_str());
+		
+	}
 
 	switch (getOpcodeFormat(opcode))
 	{
