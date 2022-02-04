@@ -27,7 +27,7 @@ std::vector<Lexema> Lexer::lex(const std::vector<Token>& tokens)
 			state = NONE;
 			lexema = indirectAddress;
 		}
-		else if (token[token.size() - 1] == 'H' && std::isxdigit(token[0]))
+		else if (token.ends_with('H') && std::isxdigit(token[0]))
 		{
 			lexema = Lexema(LexemID::NUMBER, a16toi(token));
 		}
@@ -44,14 +44,14 @@ std::vector<Lexema> Lexer::lex(const std::vector<Token>& tokens)
 		{
 			lexema = Lexema(LexemID::LABEL_USE, token.substr(1));
 		}
-		else if (token[token.size() - 1] == ':')
+		else if (token.ends_with(':'))
 		{
 			assert(state != INDIRECT_ADDRESS);
 			lexema = Lexema(LexemID::LABEL, token.substr(0, token.size() - 1));
 		}
 		else if (token.find('"') != std::string::npos)
 		{
-			lexema = Lexema(LexemID::STRING, token.substr(0, token.size()-1).substr(1));
+			lexema = Lexema(LexemID::STRING, token.substr(0, token.size() - 1).substr(1));
 		}
 		else
 			lexema = Lexema(LexemID::MNEMONIC, token);

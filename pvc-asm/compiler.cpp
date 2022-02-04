@@ -126,7 +126,10 @@ void Compiler::subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint1
 	break;
 
 	case constructDescription(CONSTANT):
-		write16(std::get<Constant>(mnemonic.mnemonics[0]).constant);
+		if(getOpcodeFormat(dmnemonic) == OPCODE_C8)
+			write((uint8_t)std::get<Constant>(mnemonic.mnemonics[0]).constant);
+		else
+			write16(std::get<Constant>(mnemonic.mnemonics[0]).constant);
 		break;
 
 	case constructDescription(LABEL):
@@ -167,6 +170,7 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 		subcompileMnemonic(mnemonic, {
 			{constructDescription(REGISTER, REGISTER), MOV_RR},
 			{constructDescription(REGISTER, CONSTANT), MOV_RC},
+			{constructDescription(REGISTER, LABEL), MOV_RC},
 			{constructDescription(REGISTER, INDIRECT_ADDRESS), MOV_RM},
 			{constructDescription(INDIRECT_ADDRESS, REGISTER), MOV_MR},
 			});
@@ -216,6 +220,7 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 	{
 		subcompileMnemonic(mnemonic, {
 			{constructDescription(REGISTER, CONSTANT), CMP_RC},
+			{constructDescription(REGISTER, LABEL), CMP_RC},
 			});
 	}
 	else if (mnemonic.name == "PUSHB")
@@ -228,6 +233,7 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 	{
 		subcompileMnemonic(mnemonic, {
 			{constructDescription(CONSTANT), PUSH_C},
+			{constructDescription(LABEL), PUSH_C},
 			{constructDescription(REGISTER), PUSH_R},
 			});
 	}

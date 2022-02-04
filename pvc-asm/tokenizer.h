@@ -6,12 +6,12 @@ using Token = std::string;
 class Tokenizer
 {
 	/// <summary>
-	/// handles quotes, spaces.
+	/// handles quotes, spaces,
 	/// </summary>
 	static std::vector<Token> coreTokenize(std::string src);
 
 	/// <summary>
-	/// handles operators, merges some.
+	/// handles operators, merges some, removes comments.
 	/// </summary>
 	///	<example>
 	///	"[%ax+%bx]" => "[", "%ax", "+", "%bx", "]"

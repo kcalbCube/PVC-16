@@ -6,8 +6,7 @@
 
 uint16_t Mnemonic::describeMnemonics(void) const
 {
-	uint16_t result = 0;
-	size_t i = 0;
+	uint16_t result = 0, i = 0;
 	for (auto&& m : mnemonics)
 		result += (REGISTER + m.index()) << i++ * 4;
 
@@ -230,6 +229,7 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 				mnemonic.mnemonics.emplace_back(String(std::get<std::string>(lexemas)));
 			}
 			break;
+
 		default: break;
 		}
 	
