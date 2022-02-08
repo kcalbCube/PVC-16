@@ -8,7 +8,7 @@
 #define REGISTERS_LIST A, B, C, D, E, SI, BP, SP, IP
 #define LREGISTERS_LIST AH, AL, BH, BL, CH, CL, DH, DL, EH, EL, SIH, SIL, BPH, BPL, SPH, SPL, IPH, IPL
 
-enum RegisterID
+enum RegisterID : unsigned
 {
 	REGISTERS_LIST,
 	LREGISTERS_LIST,

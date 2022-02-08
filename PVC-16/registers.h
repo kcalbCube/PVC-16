@@ -13,12 +13,12 @@ union Register
 	};
 };
 
-static struct StatusRegister
+inline struct StatusRegister
 {
-	bool zero : 1;
-	bool greater : 1;
-	bool sign : 1;
-	bool interruptEnable : 1;
+	int zero = 0;
+	int greater = 0;
+	int sign = 0;
+	int interruptEnable = 1;
 
 
 } status;
@@ -43,23 +43,26 @@ inline Register registers[AH];
 
 inline void writeRegister(const RegisterID id, const uint16_t value, bool shouldUpdateStatus = false)
 {
-	if (id < AH)
+	if (shouldUpdateStatus)
+		updateStatus(value);
+
+	if (is16register(id))
 	{
-		registers[static_cast<size_t>(id)].u16 = shouldUpdateStatus ? updateStatus(value) : value;
+		registers[static_cast<size_t>(id)].u16 = value;
 		return;
 	}
 	const auto parent = static_cast<RegisterID>((id - AH) / 2);
 	const auto isH = (id - AH) % 2 == 0;
-	(isH ? registers[parent].h : registers[parent].l) = 
-		shouldUpdateStatus ? updateStatus(static_cast<uint8_t>(value)) : static_cast<uint8_t>(value);
+	(isH ? registers[parent].h : registers[parent].l) = value;
 }
 
 inline uint16_t readRegister(const RegisterID id)
 {
 	if(is16register(id))
 		return registers[static_cast<size_t>(id)].u16;
-	const auto parent = static_cast<RegisterID>((id - AH) / 2);
-	const auto isH = (id - AH) % 2 == 0;
+	const auto idSubAH = id - AH;
+	const auto parent = static_cast<RegisterID>(idSubAH >> 1);
+	const auto isH = !(idSubAH & 1);
 	return isH ? registers[parent].h : registers[parent].l;
 }
 
@@ -71,7 +74,8 @@ inline uint16_t& getRegister16(const RegisterID id)
 
 inline uint8_t& getRegister8(const RegisterID id)
 {
-	const auto parent = static_cast<RegisterID>((id - AH) / 2);
-	const auto isH = (id - AH) % 2 == 0;
+	const auto idSubAH = id - AH;
+	const auto parent = static_cast<RegisterID>(idSubAH >> 1);
+	const auto isH = !(idSubAH & 1);
 	return isH ? registers[parent].h : registers[parent].l;
 }
