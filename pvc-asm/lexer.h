@@ -13,13 +13,21 @@ enum class LexemID
 	NUMBER,
 	LABEL_USE,
 	REGISTER,
-	STRING
+	STRING,
+	NEWLINE
 };
 
 struct Lexema
 {
 	LexemID id;
 	std::variant<std::vector<Lexema>, int, std::string> lexemas;
+
+	std::string file;
+	unsigned line = 0;
+
+	Lexema(LexemID id_, decltype(lexemas) lexemas_)
+		: id{ id_ }, lexemas{ lexemas_ } {}
+	Lexema(void) = default;
 };
 
 class Lexer

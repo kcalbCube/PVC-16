@@ -10,6 +10,7 @@ struct LabelUse{ std::string label; };
 struct Register{ std::string name; };
 struct Constant{ int constant = 0; };
 struct String { std::string string; };
+struct Newline {};
 
 struct IndirectAddress
 {
@@ -21,6 +22,8 @@ struct Mnemonic
 	std::string name;
 	std::vector<std::variant<Register, Constant, LabelUse, IndirectAddress, String>> mnemonics;
 
+	unsigned line = 0;
+	std::string file;
 	uint16_t describeMnemonics(void) const;
 };
 
@@ -45,7 +48,7 @@ constexpr uint16_t constructDescription(void)
 	return 0;
 }
 
-using SyntaxUnit = std::variant<Mnemonic, LabelDefinition>;
+using SyntaxUnit = std::variant<Mnemonic, LabelDefinition, Newline>;
 
 template<class... Ts> struct visit_overload : Ts... { using Ts::operator()...; };
 

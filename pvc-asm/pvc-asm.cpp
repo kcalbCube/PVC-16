@@ -1,12 +1,13 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-
 #include "compiler.h"
 #include "lexer.h"
 #include "syntaxer.h"
 #include "tokenizer.h"
 #include <args.hxx>
+#include <chrono>
+
 using namespace std::literals;
 
 int main(const int argc, char** args)
@@ -37,17 +38,35 @@ int main(const int argc, char** args)
         std::cerr << parser;
         return 1;
     }
+    auto start = std::chrono::high_resolution_clock::now();
+    std::string fileName = curFile = args::get(inputFile);
+    std::ifstream input(fileName);
+    std::string source;
+    reserveLines(fileName);
 
-    std::ifstream input(args::get(inputFile));
-    std::string source; std::getline(input, source, '\0');
+    std::getline(input, source, '\0');
+    input.clear();
+    input.seekg(0, std::ios::beg);
+
+    while (std::getline(input, getNextLine(fileName)));
+
     input.close();
 
-    auto tokens = Tokenizer::tokenize(source);
-    auto lexemas = Lexer::lex(tokens);
+    auto tokens   = Tokenizer::tokenize(source);
+    auto lexemas  = Lexer::lex(tokens);
     auto syntaxis = Syntaxer::syntaxParse(lexemas);
-    std::ofstream of(args::get(output), std::ios::binary);
-    Compiler().compile(syntaxis, of);
-    of.flush();
-    of.close();
+
+    Compiler compiler;
+    compiler.compile(syntaxis);
+
+    if (!getErrorNumber())
+    {
+        std::ofstream of(args::get(output), std::ios::binary);
+        compiler.writeInOstream(of);
+        of.flush();
+        of.close();
+    }
+    auto elapsed = std::chrono::high_resolution_clock::now() - start;
+    std::cout << std::endl << fileName << " compiled in " << std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count() << " ms. " << getErrorNumber() << " error(s)" << std::endl;
     return 0;
 }

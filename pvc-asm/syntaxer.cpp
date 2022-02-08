@@ -29,7 +29,7 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 		inMnemonic = false;
 	};									 
 
-	for (auto& [id, lexemas] : lexems)
+	for (auto& [id, lexemas, file, line] : lexems)
 	{
 		switch(id)
 		{
@@ -37,9 +37,12 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 				finishMnemonic();
 				inMnemonic = true;
 				mnemonic.name = std::get<std::string>(lexemas);
+				mnemonic.file = file;
+				mnemonic.line = line;
 				break;
 			case LexemID::LABEL:
 				finishMnemonic();
+
 				mnemonics.emplace_back(LabelDefinition(std::get<std::string>(lexemas)));
 				break;
 
@@ -82,7 +85,7 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 					{
 					case '+':
 						if (op[0].id != LexemID::REGISTER)
-							abort();
+							error(file, line, "indirect address syntax error");
 						switch (op[2].id)
 						{
 						case LexemID::REGISTER:
@@ -134,19 +137,13 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 					}
 					break;
 
-					default: abort(); break;
+					default: 
+						error(file, line, "bad indirect address syntax"); 
+					break;
 					}
 				}
 					break;
 				case 5: // 8 * %b + %a
-#if 0
-						if(std::get<std::string>(op[1].lexemas) == "+") // %a + 8 * %b
-						{ // transform to normal format
-							std::swap(op[0], op[4]); // %b + 8 * %a
-							std::swap(op[1], op[3]); // %b * 8 + %a
-							std::swap(op[0], op[2]); // 8 * %b + %a
-						}
-#endif
 						switch (op[4].id)
 						{
 						case LexemID::REGISTER:
@@ -173,18 +170,12 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 								});
 							break;
 
-						default: abort();
+						default: 
+							error(file, line, "bad indirect address syntax");
+							break;
 						}
 					break;
 				case 7: // 8 * %b + %a + FFh
-#if 0
-						if (std::get<std::string>(op[1].lexemas) == "+") // %a + 8 * %b + FFh
-						{ // transform to normal format
-							std::swap(op[0], op[4]); // %b + 8 * %a
-							std::swap(op[1], op[3]); // %b * 8 + %a
-							std::swap(op[0], op[2]); // 8 * %b + %a
-						}
-#endif
 						if (op[6].id == LexemID::NUMBER)
 							mnemonic.mnemonics.emplace_back(IndirectAddress{
 								.base = Register(std::get<std::string>(op[4].lexemas)),
@@ -206,26 +197,30 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 				break;
 			case LexemID::NUMBER:
 			{
-				assert(inMnemonic);
+				if(!inMnemonic)
+					error(file, line, "number outside mnemonic.");
 				mnemonic.mnemonics.emplace_back(Constant(std::get<int>(lexemas)));
 			}
 			break;
 			case LexemID::LABEL_USE:
 				{
-				assert(inMnemonic);
+				if (!inMnemonic)
+					error(file, line, "label use outside mnemonic.");
 				mnemonic.mnemonics.emplace_back(LabelUse(std::get<std::string>(lexemas)));
 				}
 				break;
 			case LexemID::REGISTER: 
 			{
-				assert(inMnemonic);
+				if (!inMnemonic)
+					error(file, line, "register outside mnemonic.");
 				mnemonic.mnemonics.emplace_back(Register(std::get<std::string>(lexemas)));
 			}
 			break;
 
 			case LexemID::STRING: 
 			{
-				assert(inMnemonic);
+				if (!inMnemonic)
+					error(file, line, "string outside mnemonic.");
 				mnemonic.mnemonics.emplace_back(String(std::get<std::string>(lexemas)));
 			}
 			break;

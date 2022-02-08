@@ -1,5 +1,5 @@
 #include "compiler.h"
-
+#include "utility.h"
 #include <ostream>
 
 #include "../PVC-16/opcode.h"
@@ -46,8 +46,6 @@ void Compiler::writeLabel(const std::string& label)
 {
 	if (const auto lbl = findLabel(label); lbl == nullptr)
 	{
-		//if (label.starts_with('.'))
-			//abort(); // TODO: add message
 		delayedSymbols[label].push_back(ip);
 		ip += 2;
 	}
@@ -57,8 +55,13 @@ void Compiler::writeLabel(const std::string& label)
 
 SIB Compiler::generateSIB(const IndirectAddress& ia)
 {
-	return SIB(ia.scale, ia.index.name.empty()? NO_REG : registerName2registerId.at(ia.index.name),
-		ia.base.name.empty()? NO_REG : registerName2registerId.at(ia.base.name), isDispPresent(ia));
+	return SIB(ia.scale, ia.index.name.empty() ? NO_REG : registerName2registerId.at(ia.index.name),
+		ia.base.name.empty() ? NO_REG : registerName2registerId.at(ia.base.name), isDispPresent(ia));
+}
+
+void Compiler::writeSIB(const Mnemonic& mnemonic, const IndirectAddress& ia)
+{
+	write(std::bit_cast<uint8_t>(generateSIB(ia)));
 }
 
 bool Compiler::isDispPresent(const IndirectAddress& ia)
@@ -83,77 +86,98 @@ inline void Compiler::writeDisp(const IndirectAddress& ia)
 void Compiler::subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint16_t, Opcode>& variants)
 {
 	auto md = mnemonic.describeMnemonics();
-	Opcode dmnemonic = variants.at(md);
+	Opcode dmnemonic;
+	try
+	{
+		dmnemonic = variants.at(md);
+	}
+	catch (std::out_of_range&)
+	{
+		error(mnemonic.file, mnemonic.line, "bad opcode syntax.");
+		return;
+	}
 
 	data.reserve(ip + 5);
-	write(dmnemonic);
-	switch (md)
+	auto startIp = ip;
+	try 
 	{
-	case constructDescription(REGISTER, REGISTER):
-		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
-		break;
-	case constructDescription(REGISTER, CONSTANT):
-		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-		write16(std::get<Constant>(mnemonic.mnemonics[1]).constant);
-		break;
-	case constructDescription(REGISTER, INDIRECT_ADDRESS):
-	{
-		auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[1]);
-		auto id = registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name);
-		write(id);
+		write(dmnemonic);
+		switch (md)
+		{
+		case constructDescription(REGISTER, REGISTER):
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
+			break;
+		case constructDescription(REGISTER, CONSTANT):
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+			write16(std::get<Constant>(mnemonic.mnemonics[1]).constant);
+			break;
+		case constructDescription(REGISTER, INDIRECT_ADDRESS):
+		{
+			auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[1]);
+			auto id = registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name);
+			write(id);
 
-		write(std::bit_cast<uint8_t>(generateSIB(ia)));
-		if (isDispPresent(ia))
-			writeDisp(ia);
+			write(std::bit_cast<uint8_t>(generateSIB(ia)));
+			if (isDispPresent(ia))
+				writeDisp(ia);
+		}
+		break;
+		case constructDescription(REGISTER, LABEL):
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+			writeLabel(std::get<LabelUse>(mnemonic.mnemonics[1]).label);
+			break;
+
+		case constructDescription(INDIRECT_ADDRESS, REGISTER):
+		{
+			auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[0]);
+			write(std::bit_cast<uint8_t>(generateSIB(ia)));
+
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
+
+			if (isDispPresent(ia))
+				writeDisp(ia);
+		}
+		break;
+
+		case constructDescription(CONSTANT):
+			if (getOpcodeFormat(dmnemonic) == OPCODE_C8)
+				write((uint8_t)std::get<Constant>(mnemonic.mnemonics[0]).constant);
+			else
+				write16(std::get<Constant>(mnemonic.mnemonics[0]).constant);
+			break;
+
+		case constructDescription(LABEL):
+			writeLabel(std::get<LabelUse>(mnemonic.mnemonics[0]).label);
+			break;
+
+		case constructDescription(REGISTER):
+			write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
+			break;
+
+		case constructDescription(INDIRECT_ADDRESS):
+		{
+			auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[0]);
+
+			write(std::bit_cast<uint8_t>(generateSIB(ia)));
+			if (isDispPresent(ia))
+				writeDisp(ia);
+		}
+		break;
+		case constructDescription():
+			break;
+
+		default:
+			error(mnemonic.file, mnemonic.line, "subcompiler constructor not present.");
+			break;
+		}
 	}
-		break;
-	case constructDescription(REGISTER, LABEL):
-		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-		writeLabel(std::get<LabelUse>(mnemonic.mnemonics[1]).label);
-		break;
-
-	case constructDescription(INDIRECT_ADDRESS, REGISTER):
+	catch (std::out_of_range&)
 	{
-		auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[0]);
-		write(std::bit_cast<uint8_t>(generateSIB(ia)));
-
-		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[1]).name));
-
-		if (isDispPresent(ia))
-			writeDisp(ia);
-	}
-	break;
-
-	case constructDescription(CONSTANT):
-		if(getOpcodeFormat(dmnemonic) == OPCODE_C8)
-			write((uint8_t)std::get<Constant>(mnemonic.mnemonics[0]).constant);
-		else
-			write16(std::get<Constant>(mnemonic.mnemonics[0]).constant);
-		break;
-
-	case constructDescription(LABEL):
-		writeLabel(std::get<LabelUse>(mnemonic.mnemonics[0]).label);
-		break;
-
-	case constructDescription(REGISTER):
-		write(registerName2registerId.at(std::get<Register>(mnemonic.mnemonics[0]).name));
-		break;
-
-	case constructDescription(INDIRECT_ADDRESS):
-	{
-		auto&& ia = std::get<IndirectAddress>(mnemonic.mnemonics[0]);
-
-		write(std::bit_cast<uint8_t>(generateSIB(ia)));
-		if (isDispPresent(ia))
-			writeDisp(ia);
-	}
-		break;
-	case constructDescription():
-		break;
-
-	default:
-		throw std::exception("Subcompiler constructor not present.");
+		error(mnemonic.file, mnemonic.line, "bad register");
+		while (ip --> startIp)
+			write(ip, 0x00);
+		++ip;
 	}
 }
 
@@ -259,11 +283,11 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 			});
 	}
 	else
-	throw std::exception("Unknown mnemonic");
+		error(mnemonic.file, mnemonic.line, "unknown mnemonic.");
 
 }
 
-void Compiler::compile(std::vector<SyntaxUnit>& syntax, std::ostream& output)
+void Compiler::compile(std::vector<SyntaxUnit>& syntax)
 {
 	for (auto&& su : syntax)
 		std::visit(visit_overload{
@@ -317,17 +341,21 @@ void Compiler::compile(std::vector<SyntaxUnit>& syntax, std::ostream& output)
 								return x.first.starts_with('.');
 							});
 					}
-				}
+				},
+				[&](const Newline& nl) -> void {}
 			}, su);
+}
 
+void Compiler::writeInOstream(std::ostream& output)
+{
+	char buffer[128];
 	std::string syms;
-	for(auto&& [label, address] : symbols)
+	for (auto&& [label, address] : symbols)
 	{
-		char buffer[128];
 		sprintf_s(buffer, "%s:%04X;", label.c_str(), address);
 		syms += buffer;
 	}
-
-	output << syms.size() << syms;
+	sprintf_s(buffer, "%04X", syms.size());
+	output << buffer << syms;
 	std::ranges::copy(data, std::ostream_iterator<char>(output));
 }

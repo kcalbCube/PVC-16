@@ -148,6 +148,7 @@
     <ClCompile Include="decoder.cpp" />
     <ClCompile Include="interrupt.cpp" />
     <ClCompile Include="memory.cpp" />
+    <ClCompile Include="ports.cpp" />
     <ClCompile Include="PVC-16.cpp" />
     <ClCompile Include="stack.cpp" />
   </ItemGroup>
@@ -158,6 +159,7 @@
     <ClInclude Include="memory.h" />
     <ClInclude Include="narg.h" />
     <ClInclude Include="opcode.h" />
+    <ClInclude Include="ports.h" />
     <ClInclude Include="registers.h" />
     <ClInclude Include="registers_define.h" />
     <ClInclude Include="stack.h" />

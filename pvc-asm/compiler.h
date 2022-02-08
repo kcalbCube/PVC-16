@@ -4,6 +4,7 @@
 #include <vector>
 #include "syntaxer.h"
 #include <string>
+#include "utility.h"
 
 #include "../PVC-16/opcode.h"
 
@@ -24,14 +25,20 @@ class Compiler
 	void write(uint16_t ip, uint8_t data);
 	void write16(uint16_t ip, uint16_t data);
 	void writeLabel(const std::string& label);
+	void writeSIB(const Mnemonic& mnemonic, const IndirectAddress& ia);
 
 	SIB generateSIB(const IndirectAddress& ia);
 	bool isDispPresent(const IndirectAddress& ia);
 
+	struct BadRegister : std::exception {};
+
 public:
 	void subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint16_t, Opcode>& variants);
 	void compileMnemonic(const Mnemonic& mnemonic);
-	void compile(std::vector<SyntaxUnit>& syntax, std::ostream& output);
+	void compile(std::vector<SyntaxUnit>& syntax);
 	void writeDisp(const IndirectAddress& ia);
+
+	void writeInOstream(std::ostream& output);
+
 };
 

@@ -9,7 +9,9 @@
 #include <args.hxx>
 #include "utility.h"
 #include "vmflags.h"
-
+#ifdef ENABLE_EXECUTION_TIME_CAPTURE
+#include <chrono>
+#endif
 
 void loadPVCObjFromFile(const std::string& fileName)
 {
@@ -24,11 +26,12 @@ void loadPVCObjFromFile(const std::string& fileName)
         return output;
     };
 
-    size_t size = 0;
-    input >> size;
-
+    unsigned tableLen = 0;
+    char tableLenBuffer[5]{};
+    input.get(tableLenBuffer, 5);
+    sscanf_s(tableLenBuffer, "%04X", &tableLen);
     std::string syms;
-    std::copy_n(std::istream_iterator<char>(input), size, std::back_inserter(syms));
+    std::copy_n(std::istream_iterator<char>(input), tableLen, std::back_inserter(syms));
 
     for (auto&& c : string_split(syms, ";"))
     {
@@ -69,8 +72,17 @@ void loadDumpFromFile(const std::string& fileName, uint16_t org)
 
 void start(void)
 {
+#ifdef ENABLE_EXECUTION_TIME_CAPTURE
+    auto start = std::chrono::high_resolution_clock::now();
+#endif
     while (!isHalted)
         Decoder::process();
+#ifdef ENABLE_EXECUTION_TIME_CAPTURE
+    auto elapsed = std::chrono::high_resolution_clock::now() - start;
+    auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+    std::cout << std::endl << microseconds << " microseconds " << milliseconds << " (ms) elapsed" << std::endl;
+#endif
     registersDump();
 }
 void interactive(void)
@@ -131,7 +143,13 @@ int main(int argc, char** argv)
     args::Flag loadRaw(execution, "raw", "Load raw", { "raw" });
     args::ValueFlag<int> offset(execution, "offset", "Loading offset in raw mode", { "offset" });
     args::Group debug(parser, "Debug flags");
+#ifdef ENABLE_WORKFLOW
     args::Flag workflow(debug, "dworkflow", "Enables workflow", { "dworkflow" });
+#endif
+#ifdef ENABLE_EXECUTION_TIME_CAPTURE
+    args::Flag executionTimeCapture(debug, "dexectime", "Captures execution time", { "dexectime" });
+#endif
+
     args::Positional<std::string> input(parser, "input", "The input file");
 
     try
@@ -155,7 +173,12 @@ int main(int argc, char** argv)
         return 1;
     }
 
+#ifdef ENABLE_WORKFLOW
     vmflags.workflowEnabled = workflow;
+#endif
+#ifdef ENABLE_EXECUTION_TIME_CAPTURE
+    vmflags.captureExecutionTime = executionTimeCapture;
+#endif
     if (offset)
         vmflags.loadOffset = args::get(offset);
     if (interactive || !input)
