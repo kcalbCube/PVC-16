@@ -1,14 +1,21 @@
 .org 80h
 data:
 	db "Hello, world!\n"
-	db 0h
-start:
-	mov %bp @data
+	
+wait:
 	.loop:
-		mov %al [%si + %bp]
-		inc %si
-		cmp %al 0h
-		int 5h
+		inb %cl E9h
+		cmp %cl 0h
 		jnz @.loop
-	.exit:
-		int 0h
+	ret
+		
+start:
+	mov %sp 300h
+	.loop:
+		mov %al [%b + @data]
+		inc %b
+		outb E9h %al
+		call @wait
+		cmp %al Ah
+		jnz @.loop
+	int 0h
