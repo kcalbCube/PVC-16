@@ -4,6 +4,9 @@
 #include <cstdio>
 #include <iostream>
 #include <string>
+#include "registers.h"
+#include "registers_define.h"
+#include "opcode.h"
 
 inline void hexDump(const char* desc, void* addr, const size_t len, const size_t offset, const size_t lineSize = 16)
 {
@@ -87,3 +90,8 @@ inline std::string renderIndirectAddress(SIB sib, uint16_t disp)
 
     return str.substr(0, str.size()-1) + "]";
 }
+
+// Memory utils
+#define m1628(src) static_cast<uint8_t>(src), static_cast<uint8_t>((src) >> 8)
+#define m1628h(src) static_cast<uint8_t>(src)
+#define m1628l(src) static_cast<uint8_t>((src) >> 8)

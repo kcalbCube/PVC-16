@@ -6,6 +6,7 @@
 #include "utility.h"
 #include "stack.h"
 #include "vmflags.h"
+#include "bus.h"
 
 #include <magic_enum.hpp>
 
@@ -36,6 +37,25 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		else
 			updateStatus(static_cast<uint8_t>(getRegister8(r1) -= readRegister(r2)));
 		break;
+
+	case MUL:
+		if (is16register(r1))
+			updateStatus(static_cast<uint16_t>(getRegister16(r1) += readRegister(r2)));
+		else
+			updateStatus(static_cast<uint8_t>(getRegister8(r1) += readRegister(r2)));
+		break;
+
+	case DIV:
+	{
+		auto r2v = readRegister(r2);
+		if (r2v == 0)
+			interrupt(DE);
+		if (is16register(r1))
+			updateStatus(static_cast<uint16_t>(getRegister16(r1) /= r2v));
+		else
+			updateStatus(static_cast<uint8_t>(getRegister8(r1) /= r2v));
+		break;
+	}
 				
 	}
 }
@@ -44,7 +64,7 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 {
 	switch (opcode)
 	{
-	case MOV_RC:
+	case MOV_RC16:
 		writeRegister(r1, constant);
 		break;
 
@@ -59,7 +79,7 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 	}
 	break;
 
-	case ADD_C:
+	case ADD_C16:
 	{
 		if (is16register(r1))
 			updateStatus(static_cast<uint16_t>(getRegister16(r1) += constant));
@@ -67,7 +87,7 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 			updateStatus(static_cast<uint8_t>(getRegister8(r1) += constant));
 		break;
 	}
-	case SUB_C:
+	case SUB_C16:
 	{
 		if (is16register(r1))
 			updateStatus(static_cast<uint16_t>(getRegister16(r1) -= constant));
@@ -75,6 +95,42 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 			updateStatus(static_cast<uint8_t>(getRegister8(r1) -= constant));
 		break;
 	}
+
+	case MUL_C16:
+		if (is16register(r1))
+			updateStatus(static_cast<uint16_t>(getRegister16(r1) += constant));
+		else
+			updateStatus(static_cast<uint8_t>(getRegister8(r1) += constant));
+		break;
+
+	case DIV_C16:
+	{
+		/*
+		if (constant == 0)
+			interrupt(DE);
+		*/
+		if (is16register(r1))
+			updateStatus(static_cast<uint16_t>(getRegister16(r1) /= constant));
+		else
+			updateStatus(static_cast<uint8_t>(getRegister8(r1) /= constant));
+		break;
+	}
+
+	case OUT_R:
+		if (is16register(r1))
+			busWrite16(constant, getRegister16(r1));
+		else
+			busWrite(constant, getRegister8(r1));
+		break;
+
+	case IN_R:
+		if (is16register(r1))
+			writeRegister(r1, busRead16(constant));
+		else
+			writeRegister(r1, busRead(constant));
+		break;
+
+
 	}
 }
 
@@ -84,6 +140,9 @@ void Decoder::processRM(Opcode opcode, RegisterID r1, uint16_t addr)
 	{
 	case MOV_RM:
 		mc.readInRegister(addr, r1);
+		break;
+	case LEA:
+		writeRegister(r1, addr);
 		break;
 	}
 }
@@ -174,7 +233,7 @@ void Decoder::processC(Opcode opcode, uint16_t constant)
 {
 	switch (opcode)
 	{
-		case PUSH_C:
+		case PUSH_C16:
 		{
 			StackController::push16(constant);
 		}
@@ -262,6 +321,80 @@ void Decoder::processJO(Opcode opcode)
 	}
 }
 
+void Decoder::processCC(Opcode opcode, uint16_t c1, uint16_t c2)
+{
+	switch (opcode)
+	{
+	case OUT_C16:
+	{
+		busWrite16(c2, c1);
+	}
+	break;
+	}
+}
+
+void Decoder::processC8C(Opcode opcode, uint8_t c1, uint16_t c2)
+{
+	switch (opcode)
+	{
+	case OUT_C8:
+	{
+		busWrite(c2, c1);
+	}
+	break;
+	}
+}
+
+void Decoder::processMM(Opcode opcode, uint16_t addr1, uint16_t addr2)
+{
+	switch (opcode)
+	{
+	case MOV_MM16:
+	{
+		mc.write16(addr1, mc.read16(addr2));
+	}
+	break;
+	case MOV_MM8:
+	{
+		mc.write8(addr1, mc.read8(addr2));
+	}
+	break;
+	}
+}
+
+void Decoder::processMC(Opcode opcode, uint16_t addr, uint16_t constant)
+{
+	switch (opcode)
+	{
+	case MOV_MC16:
+		mc.write16(addr, constant);
+		break;
+
+	case OUT_M8:
+		busWrite(constant, mc.read8(addr));
+		break;
+	case OUT_M16:
+		busWrite(constant, mc.read16(addr));
+		break;
+	case IN_M8:
+		mc.write8(addr, busRead(constant));
+		break;
+	case IN_M16:
+		mc.write16(addr, busRead16(constant));
+		break;
+	}
+}
+
+void Decoder::processMC8(Opcode opcode, uint16_t addr, uint8_t constant)
+{
+	switch (opcode)
+	{
+	case MOV_MC8:
+		mc.write8(addr, constant);
+		break;
+	}
+}
+
 void Decoder::process(void)
 {
 	auto&& ip = getRegister16(IP); 
@@ -331,6 +464,37 @@ void Decoder::process(void)
 	}
 	break;
 
+	case OPCODE_MC:
+	{
+		const auto sib = std::bit_cast<SIB>(mc.read8(ip++));
+		const auto c = mc.read16(ip);
+		ip += 2;
+		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
+		const uint16_t addr = readAddress(sib, disp);
+		ip += sib.disp * 2;
+#ifdef ENABLE_WORKFLOW
+		if (vmflags.workflowEnabled)
+			printf("%s{%04X} %04X\n", renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr, c);
+#endif
+		processMC(opcode, addr, c);
+	}
+	break;
+
+	case OPCODE_MC8:
+	{
+		const auto sib = std::bit_cast<SIB>(mc.read8(ip++));
+		const auto c = mc.read8(ip++);
+		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
+		const uint16_t addr = readAddress(sib, disp);
+		ip += sib.disp * 2;
+#ifdef ENABLE_WORKFLOW
+		if (vmflags.workflowEnabled)
+			printf("%s{%04X} %04X\n", renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr, c);
+#endif
+		processMC8(opcode, addr, c);
+	}
+	break;
+
 	case OPCODE_MR:
 	{
 		const auto sib = std::bit_cast<SIB>(mc.read8(ip++));
@@ -345,6 +509,26 @@ void Decoder::process(void)
 		processMR(opcode, addr, r1);
 
 	}
+	break;
+
+	case OPCODE_MM:
+	{
+		const auto sib1 = std::bit_cast<SIB>(mc.read8(ip++));
+		const auto sib2 = std::bit_cast<SIB>(mc.read8(ip++));
+		const uint16_t disp1 = sib1.disp ? mc.read16(ip) : 0;
+		ip += sib1.disp * 2;
+		const uint16_t disp2 = sib2.disp ? mc.read16(ip) : 0;
+		ip += sib2.disp * 2;
+		const uint16_t addr1 = readAddress(sib1, disp1);
+		const uint16_t addr2 = readAddress(sib1, disp1);
+#ifdef ENABLE_WORKFLOW
+		if (vmflags.workflowEnabled)
+			printf("%s{%04X} %s{%04X}\n", renderIndirectAddress(sib1, disp1).c_str(), (unsigned int)addr1, renderIndirectAddress(sib2, disp2).c_str(), (unsigned int)addr2);
+#endif
+		processMM(opcode, addr1, addr2);
+
+	}
+	break;
 
 	case OPCODE_C8:
 	{
@@ -363,9 +547,37 @@ void Decoder::process(void)
 		ip += 2;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%02X\n", (unsigned int)c);
+			printf("%04X\n", (unsigned int)c);
 #endif
 		processC(opcode, c);
+	}
+	break;
+
+	case OPCODE_CC:
+	{
+		const auto c1 = mc.read16(ip);
+		ip += 2;
+		const auto c2 = mc.read16(ip);
+		ip += 2;
+#ifdef ENABLE_WORKFLOW
+		if (vmflags.workflowEnabled)
+			printf("%04X %04X\n", (unsigned int)c1, (unsigned int)c2);
+#endif
+		processCC(opcode, c1, c2);
+	}
+	break;
+
+	case OPCODE_C8C:
+	{
+		const auto c1 = mc.read8(ip++);
+		const auto c2 = mc.read16(ip);
+		ip += 2;
+
+#ifdef ENABLE_WORKFLOW
+		if (vmflags.workflowEnabled)
+			printf("%02X %04X\n", (unsigned int)c1, (unsigned int)c2);
+#endif
+		processC8C(opcode, c1, c2);
 	}
 	break;
 

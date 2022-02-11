@@ -34,7 +34,7 @@ class Compiler
 
 public:
 	void subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint16_t, Opcode>& variants);
-	void compileMnemonic(const Mnemonic& mnemonic);
+	void compileMnemonic(Mnemonic mnemonic); // pbv
 	void compile(std::vector<SyntaxUnit>& syntax);
 	void writeDisp(const IndirectAddress& ia);
 

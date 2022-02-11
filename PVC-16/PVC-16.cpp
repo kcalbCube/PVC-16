@@ -9,6 +9,8 @@
 #include <args.hxx>
 #include "utility.h"
 #include "vmflags.h"
+#include "device.h"
+
 #ifdef ENABLE_EXECUTION_TIME_CAPTURE
 #include <chrono>
 #endif
@@ -72,6 +74,9 @@ void loadDumpFromFile(const std::string& fileName, uint16_t org)
 
 void start(void)
 {
+    DeviceController dc;
+    dc.addDevice(new DebugOutputDevice);
+    dc.start();
 #ifdef ENABLE_EXECUTION_TIME_CAPTURE
     auto start = std::chrono::high_resolution_clock::now();
 #endif

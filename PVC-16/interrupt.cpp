@@ -10,9 +10,6 @@ void interrupt(const uint8_t interrupt)
 		isHalted = true;
 		break;
 
-	case DOUT:
-		std::cout << static_cast<char>(readRegister(A));
-		break;
 	default:
 
 		break;

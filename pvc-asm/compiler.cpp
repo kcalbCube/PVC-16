@@ -181,7 +181,7 @@ void Compiler::subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint1
 	}
 }
 
-void Compiler::compileMnemonic(const Mnemonic& mnemonic)
+void Compiler::compileMnemonic(Mnemonic mnemonic)
 {
 	if(mnemonic.name == "INT")
 	{
@@ -193,27 +193,58 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 	{
 		subcompileMnemonic(mnemonic, {
 			{constructDescription(REGISTER, REGISTER), MOV_RR},
-			{constructDescription(REGISTER, CONSTANT), MOV_RC},
-			{constructDescription(REGISTER, LABEL), MOV_RC},
+			{constructDescription(REGISTER, CONSTANT), MOV_RC16},
+			{constructDescription(REGISTER, LABEL), MOV_RC16},
 			{constructDescription(REGISTER, INDIRECT_ADDRESS), MOV_RM},
 			{constructDescription(INDIRECT_ADDRESS, REGISTER), MOV_MR},
+			{constructDescription(INDIRECT_ADDRESS, INDIRECT_ADDRESS), MOV_MM16},
+			{constructDescription(INDIRECT_ADDRESS, CONSTANT), MOV_MC16},
+			});
+	}
+	else if (mnemonic.name == "MOVB")
+	{
+		subcompileMnemonic(mnemonic, {
+			{constructDescription(INDIRECT_ADDRESS, INDIRECT_ADDRESS), MOV_MM8},
+			{constructDescription(INDIRECT_ADDRESS, CONSTANT), MOV_MC8},
 			});
 	}
 	else if(mnemonic.name == "ADD")
 	{
 		subcompileMnemonic(mnemonic, {
 		{constructDescription(REGISTER, REGISTER), ADD},
-		{constructDescription(REGISTER, CONSTANT), ADD_C},
-		{constructDescription(REGISTER, LABEL), ADD_C},
+		{constructDescription(REGISTER, CONSTANT), ADD_C16},
+		{constructDescription(REGISTER, LABEL), ADD_C16},
 				});
 	}
 	else if(mnemonic.name == "SUB")
 	{
 		subcompileMnemonic(mnemonic, {
 		{constructDescription(REGISTER, REGISTER), SUB},
-		{constructDescription(REGISTER, CONSTANT), SUB_C},
-		{constructDescription(REGISTER, LABEL), SUB_C},
+		{constructDescription(REGISTER, CONSTANT), SUB_C16},
+		{constructDescription(REGISTER, LABEL), SUB_C16},
 					});
+	}
+	else if (mnemonic.name == "DIV")
+	{
+		subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER, REGISTER), DIV},
+		{constructDescription(REGISTER, CONSTANT), DIV_C16},
+		{constructDescription(REGISTER, LABEL), DIV_C16},
+			});
+	}
+	else if (mnemonic.name == "MUL")
+	{
+		subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER, REGISTER), MUL},
+		{constructDescription(REGISTER, CONSTANT), MUL_C16},
+		{constructDescription(REGISTER, LABEL), MUL_C16},
+			});
+	}
+	else if (mnemonic.name == "LEA")
+	{
+		subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER, INDIRECT_ADDRESS), LEA},
+			});
 	}
 	else if(mnemonic.name == "INC")
 	{
@@ -256,8 +287,8 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 	else if (mnemonic.name == "PUSH")
 	{
 		subcompileMnemonic(mnemonic, {
-			{constructDescription(CONSTANT), PUSH_C},
-			{constructDescription(LABEL), PUSH_C},
+			{constructDescription(CONSTANT), PUSH_C16},
+			{constructDescription(LABEL), PUSH_C16},
 			{constructDescription(REGISTER), PUSH_R},
 			});
 	}
@@ -275,6 +306,38 @@ void Compiler::compileMnemonic(const Mnemonic& mnemonic)
 			{constructDescription(INDIRECT_ADDRESS), POP_M8},
 			{constructDescription(), POP8}
 			});
+	}
+	else if (mnemonic.name == "OUTB")
+	{
+	std::iter_swap(mnemonic.mnemonics.begin(), mnemonic.mnemonics.begin() + 1);
+	subcompileMnemonic(mnemonic, {
+		{constructDescription(CONSTANT, CONSTANT), OUT_C8},
+		{constructDescription(INDIRECT_ADDRESS, CONSTANT), OUT_M8},
+		{constructDescription(REGISTER, CONSTANT), OUT_R},
+		});
+	}
+	else if (mnemonic.name == "OUT")
+	{
+	std::iter_swap(mnemonic.mnemonics.begin(), mnemonic.mnemonics.begin() + 1);
+	subcompileMnemonic(mnemonic, {
+		{constructDescription(CONSTANT, CONSTANT), OUT_C16},
+		{constructDescription(INDIRECT_ADDRESS, CONSTANT), OUT_M16},
+		{constructDescription(REGISTER, CONSTANT), OUT_R},
+		});
+	}
+	else if (mnemonic.name == "INB")
+	{
+	subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER, CONSTANT), IN_R},
+		{constructDescription(INDIRECT_ADDRESS, CONSTANT), IN_M8}
+		});
+	}
+	else if (mnemonic.name == "IN")
+	{
+	subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER, CONSTANT), IN_R},
+		{constructDescription(INDIRECT_ADDRESS, CONSTANT), IN_M16}
+		});
 	}
 	else if (mnemonic.name == "RET")
 	{

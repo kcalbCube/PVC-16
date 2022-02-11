@@ -86,13 +86,13 @@ std::vector<Lexema> Lexer::lex(const std::vector<Token>& tokens)
 		if (state == INDIRECT_ADDRESS)
 		{
 			indirectAddress.file = file;
-			indirectAddress.line = line+1;
+			indirectAddress.line = line;
 			std::get<std::vector<Lexema>>(indirectAddress.lexemas).push_back(lexema);
 		}
 		else
 		{
 			lexema.file = file;
-			lexema.line = line+1;
+			lexema.line = line;
 			lexemas.push_back(lexema);
 		}
 	}
