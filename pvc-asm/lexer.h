@@ -20,7 +20,7 @@ enum class LexemID
 struct Lexema
 {
 	LexemID id;
-	std::variant<std::vector<Lexema>, int, std::string> lexemas;
+	std::variant<std::vector<Lexema>, unsigned, std::string> lexemas;
 
 	std::string file;
 	unsigned line = 0;

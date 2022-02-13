@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PVC-16", "PVC-16\PVC-16.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pvc-asm", "pvc-asm\pvc-asm.vcxproj", "{2CD50DE1-3BBE-412B-A809-7809F8E2F4A1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pvc-disasm", "pvc-disasm\pvc-disasm.vcxproj", "{704BA055-A6F8-4ADC-B99A-C2D91E1D368A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{2CD50DE1-3BBE-412B-A809-7809F8E2F4A1}.Release|x64.Build.0 = Release|x64
 		{2CD50DE1-3BBE-412B-A809-7809F8E2F4A1}.Release|x86.ActiveCfg = Release|Win32
 		{2CD50DE1-3BBE-412B-A809-7809F8E2F4A1}.Release|x86.Build.0 = Release|Win32
+		{704BA055-A6F8-4ADC-B99A-C2D91E1D368A}.Debug|x64.ActiveCfg = Debug|x64
+		{704BA055-A6F8-4ADC-B99A-C2D91E1D368A}.Debug|x64.Build.0 = Debug|x64
+		{704BA055-A6F8-4ADC-B99A-C2D91E1D368A}.Debug|x86.ActiveCfg = Debug|Win32
+		{704BA055-A6F8-4ADC-B99A-C2D91E1D368A}.Debug|x86.Build.0 = Debug|Win32
+		{704BA055-A6F8-4ADC-B99A-C2D91E1D368A}.Release|x64.ActiveCfg = Release|x64
+		{704BA055-A6F8-4ADC-B99A-C2D91E1D368A}.Release|x64.Build.0 = Release|x64
+		{704BA055-A6F8-4ADC-B99A-C2D91E1D368A}.Release|x86.ActiveCfg = Release|Win32
+		{704BA055-A6F8-4ADC-B99A-C2D91E1D368A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

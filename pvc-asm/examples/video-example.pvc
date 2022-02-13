@@ -1,0 +1,16 @@
+.org 80h
+start:
+	mov %sp 1000h
+	outb 20h 1h
+	outb 21h 16h
+	out  22h @T1
+	
+	mov %al 1h
+	int 10h
+	
+	.loop:
+		jmp @.loop
+	int 0h
+
+T1:
+db AAh AAh AAh AAh AAh

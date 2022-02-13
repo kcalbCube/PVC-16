@@ -3,20 +3,24 @@
 #include <vector>
 #include <string>
 
-int a16toi(const std::string& str)
+unsigned a16toi(const std::string& str)
 {
-	int result = 0;
-	sscanf_s(str.c_str(), "%X%*c", &result);
+	unsigned result = 0;
+	sscanf_s(str.c_str(), "%X", &result);
 	return result;
 }
 
-size_t errors = 0;
+size_t errors = 0, warnings = 0;
 
 std::map<std::string, std::vector<std::string>> lines;
 
 std::string formatErrorPrefix(const std::string& curFile, size_t curLine)
 {
-	return (std::string("[") + curFile + ":") + std::to_string(curLine) + "] " + (lines[curFile][curLine]) + " < ";
+	return (std::string("[") + curFile + ":") + std::to_string(curLine) + "] " + (lines[curFile][curLine]) + " ";
+}
+std::string formatErrorPrefix(const std::string& curFile)
+{
+	return std::string("[") + curFile + ": ";
 }
 
 void error(const std::string& file, size_t line, const std::string& msg)
@@ -25,9 +29,32 @@ void error(const std::string& file, size_t line, const std::string& msg)
 	++errors;
 }
 
+void warning(const std::string& file, size_t line, const std::string& msg)
+{
+	std::cerr << formatErrorPrefix(file, line) << "warning: " << msg << std::endl;
+	++warnings;
+}
+
+void warning(const std::string& file, const std::string& msg)
+{
+	std::cerr << formatErrorPrefix(file) << "warning: " << msg << std::endl;
+	++warnings;
+}
+
+void warning(const std::string& msg)
+{
+	std::cerr << "warning: " << msg << std::endl;
+	++warnings;
+}
+
 size_t getErrorNumber(void)
 {
 	return errors;
+}
+
+size_t getWarningNumber(void)
+{
+	return warnings;
 }
 
 void reserveLines(const std::string& file)

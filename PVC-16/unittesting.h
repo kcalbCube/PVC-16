@@ -99,12 +99,19 @@ struct StackWriteReadTest
 	bool work(void)
 	{
 		writeRegister(SP, 0xF00);
+		writeRegister(IP, 0xFA2);
 		StackController::push8(0xCB);
 		StackController::push16(0x8AF8);
 		StackController::push16(0x7FA7);
 
+		auto cSp = readRegister(SP);
+		StackController::push(IP);
+		writeRegister(IP, 0x00);
+
 		bool result = true;
 
+		StackController::pop(IP);
+		result = result && (readRegister(IP) == 0xFA2);
 		result = result && (StackController::pop16() == 0x7FA7);
 		result = result && (StackController::pop16() == 0x8AF8);
 		result = result && (StackController::pop8() == 0xCB);
@@ -117,6 +124,7 @@ struct StackWriteReadTest
 	{
 		mc.fill(0);
 		writeRegister(SP, 0);
+		writeRegister(IP, 0);
 	}
 };
 

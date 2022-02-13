@@ -11,9 +11,12 @@
 #include "vmflags.h"
 #include "device.h"
 
-#ifdef ENABLE_EXECUTION_TIME_CAPTURE
-#include <chrono>
+#ifdef ENABLE_VIDEO
+#include <SDL.h>
+#include <SDL_ttf.h>
+#include "video.h"
 #endif
+
 
 void loadPVCObjFromFile(const std::string& fileName)
 {
@@ -34,6 +37,8 @@ void loadPVCObjFromFile(const std::string& fileName)
     sscanf_s(tableLenBuffer, "%04X", &tableLen);
     std::string syms;
     std::copy_n(std::istream_iterator<char>(input), tableLen, std::back_inserter(syms));
+
+    syms.pop_back(); // remove last ;
 
     for (auto&& c : string_split(syms, ";"))
     {
@@ -75,13 +80,18 @@ void loadDumpFromFile(const std::string& fileName, uint16_t org)
 void start(void)
 {
     DeviceController dc;
+    ::dc = &dc;
     dc.addDevice(new DebugOutputDevice);
+    dc.addDevice(new VideoController);
     dc.start();
 #ifdef ENABLE_EXECUTION_TIME_CAPTURE
     auto start = std::chrono::high_resolution_clock::now();
 #endif
     while (!isHalted)
+    {
+        handleDelayedInterrupts();
         Decoder::process();
+    }
 #ifdef ENABLE_EXECUTION_TIME_CAPTURE
     auto elapsed = std::chrono::high_resolution_clock::now() - start;
     auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
@@ -138,6 +148,7 @@ void interactive(void)
 
     }
 }
+#undef main
 int main(int argc, char** argv)
 {
     args::ArgumentParser parser("PVC-16 virtual machine.");
@@ -177,7 +188,7 @@ int main(int argc, char** argv)
         std::cerr << parser;
         return 1;
     }
-
+    
 #ifdef ENABLE_WORKFLOW
     vmflags.workflowEnabled = workflow;
 #endif

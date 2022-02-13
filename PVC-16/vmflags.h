@@ -2,6 +2,7 @@
 
 #define ENABLE_EXECUTION_TIME_CAPTURE
 #define ENABLE_WORKFLOW
+#define ENABLE_VIDEO
 
 inline struct VMFlags
 {

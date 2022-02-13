@@ -5,7 +5,7 @@
 
 using addr_t = uint16_t;
 
-constexpr auto ramSize = 16384;
+constexpr auto ramSize = 0xFFFF;
 class MemoryController
 {
 public:

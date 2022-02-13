@@ -10,5 +10,7 @@ uint16_t busRead16(size_t addr);
 
 enum
 {
-	BUS_DOUT = 0xE9
+	BUS_DOUT = 0xE9,
+	BUS_VIDEO_START = 0x20,
+	BUS_VIDEO_END = 0x40,
 };

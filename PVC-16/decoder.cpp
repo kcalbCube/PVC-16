@@ -10,6 +10,8 @@
 
 #include <magic_enum.hpp>
 
+#pragma warning(disable: 4062)
+
 uint16_t Decoder::readAddress(SIB sib, const uint16_t disp)
 {
 	return static_cast<uint16_t>((sib.index ? readRegister(getSIBindex(sib)) : 0) * (1 << sib.scale) +
@@ -49,7 +51,10 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 	{
 		auto r2v = readRegister(r2);
 		if (r2v == 0)
+		{
 			interrupt(DE);
+			break;
+		}
 		if (is16register(r1))
 			updateStatus(static_cast<uint16_t>(getRegister16(r1) /= r2v));
 		else
@@ -105,10 +110,11 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 
 	case DIV_C16:
 	{
-		/*
 		if (constant == 0)
+		{
 			interrupt(DE);
-		*/
+			break;
+		}
 		if (is16register(r1))
 			updateStatus(static_cast<uint16_t>(getRegister16(r1) /= constant));
 		else
@@ -165,6 +171,14 @@ void Decoder::processR(Opcode opcode, RegisterID r1)
 			updateStatus(static_cast<uint16_t>(--getRegister16(r1)));
 		else
 			updateStatus(static_cast<uint8_t>(--getRegister8(r1)));
+		break;
+	}
+	case NEG:
+	{
+		if (is16register(r1))
+			updateStatus(std::bit_cast<uint16_t>((signed short&)(getRegister16(r1)) *= -1));
+		else
+			updateStatus(std::bit_cast<uint8_t>((signed char&)(getRegister8(r1)) *= -1));
 		break;
 	}
 
@@ -404,9 +418,9 @@ void Decoder::process(void)
 	if (vmflags.workflowEnabled)
 	{
 		if(auto&& opc = magic_enum::enum_name(opcode); opc.empty())
-			printf("%04X: %02-6X ", (unsigned int)(ip - 1), (unsigned int)opcode);
+			printf("%04X: %zX ", (unsigned int)(ip - 1), (unsigned int)opcode);
 		else
-			printf("%04X: %-6s ", (unsigned int)(ip - 1), std::string(opc).c_str());
+			printf("%04X: %s ", (unsigned int)(ip - 1), std::string(opc).c_str());
 	}
 #endif
 
@@ -431,7 +445,7 @@ void Decoder::process(void)
 		ip += 2;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%%%s %04X\n", registerId2registerName[r1].c_str(), (unsigned int)c);
+			printf("%%%s %04zX\n", registerId2registerName[r1].c_str(), (unsigned int)c);
 #endif
 		processRC(opcode, r1, c);
 	}
@@ -458,7 +472,7 @@ void Decoder::process(void)
 		ip += sib.disp * 2;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%%%s %s{%04X}\n", registerId2registerName[r1].c_str(), renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr);
+			printf("%%%s %s{%04zX}\n", registerId2registerName[r1].c_str(), renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr);
 #endif
 		processRM(opcode, r1, addr);
 	}
@@ -474,7 +488,7 @@ void Decoder::process(void)
 		ip += sib.disp * 2;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%s{%04X} %04X\n", renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr, c);
+			printf("%s{%04zX} %04zX\n", renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr, c);
 #endif
 		processMC(opcode, addr, c);
 	}
@@ -489,7 +503,7 @@ void Decoder::process(void)
 		ip += sib.disp * 2;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%s{%04X} %04X\n", renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr, c);
+			printf("%s{%04zX} %04zX\n", renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr, c);
 #endif
 		processMC8(opcode, addr, c);
 	}
@@ -504,7 +518,7 @@ void Decoder::process(void)
 		ip += sib.disp * 2;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%s{%04X} %%%s\n", renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr, registerId2registerName[r1].c_str());
+			printf("%s{%04zX} %%%s\n", renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr, registerId2registerName[r1].c_str());
 #endif
 		processMR(opcode, addr, r1);
 
@@ -523,7 +537,7 @@ void Decoder::process(void)
 		const uint16_t addr2 = readAddress(sib1, disp1);
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%s{%04X} %s{%04X}\n", renderIndirectAddress(sib1, disp1).c_str(), (unsigned int)addr1, renderIndirectAddress(sib2, disp2).c_str(), (unsigned int)addr2);
+			printf("%s{%04zX} %s{%04zX}\n", renderIndirectAddress(sib1, disp1).c_str(), (unsigned int)addr1, renderIndirectAddress(sib2, disp2).c_str(), (unsigned int)addr2);
 #endif
 		processMM(opcode, addr1, addr2);
 
@@ -535,7 +549,7 @@ void Decoder::process(void)
 		const auto c8 = mc.read8(ip++);
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%02X\n", (unsigned int)c8);
+			printf("%02zX\n", (unsigned int)c8);
 #endif
 		processC8(opcode, c8);
 	}
@@ -547,7 +561,7 @@ void Decoder::process(void)
 		ip += 2;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%04X\n", (unsigned int)c);
+			printf("%04zX\n", (unsigned int)c);
 #endif
 		processC(opcode, c);
 	}
@@ -561,7 +575,7 @@ void Decoder::process(void)
 		ip += 2;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%04X %04X\n", (unsigned int)c1, (unsigned int)c2);
+			printf("%04zX %04zX\n", (unsigned int)c1, (unsigned int)c2);
 #endif
 		processCC(opcode, c1, c2);
 	}
@@ -575,7 +589,7 @@ void Decoder::process(void)
 
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%02X %04X\n", (unsigned int)c1, (unsigned int)c2);
+			printf("%02zX %04zX\n", (unsigned int)c1, (unsigned int)c2);
 #endif
 		processC8C(opcode, c1, c2);
 	}
@@ -589,8 +603,8 @@ void Decoder::process(void)
 		processJO(opcode);
 		break;
 
-	default:
-		printf("not handled op %X\n", (int)opcode);
+	case OPCODE_INVALID:
+		printf("%04zX - not handled op %zX\n", ip-1, (int)opcode);
 		break;
 	}
 }

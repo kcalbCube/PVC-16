@@ -4,13 +4,17 @@
 
 void DeviceController::start(void)
 {
-	std::thread thr([*this](void) mutable -> void
+	std::thread thr([this](void) mutable -> void
 	{
 		while (true)
 		{
 			auto start = std::chrono::high_resolution_clock::now();
-			for (Device* device : devices)
+			for (Device* device : this->devices)
+			{
+				++device->tick;
 				device->process();
+			}
+			this->operations.clear();
 			std::this_thread::sleep_until(start + std::chrono::milliseconds(1));
 		}
 	});

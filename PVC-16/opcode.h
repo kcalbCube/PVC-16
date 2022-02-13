@@ -70,6 +70,8 @@ enum Opcode
 	IN_M16,
 	IN_R,
 
+	NEG,
+
 	RET,
 	CALL,
 
@@ -93,6 +95,7 @@ enum OpcodeFormat
 	OPCODE_MC8,
 	OPCODE_C8C,
 	OPCODE_CC,
+	OPCODE_INVALID
 };
 
 #define OPCODEFORMAT_CASE(opcode, format) case opcode: return format; break
@@ -147,8 +150,8 @@ __forceinline OpcodeFormat getOpcodeFormat(Opcode opcode)
 		OPCODEFORMAT_CASE(IN_M8		, OPCODE_MC);
 		OPCODEFORMAT_CASE(IN_M16	, OPCODE_MC);
 		OPCODEFORMAT_CASE(RET		, OPCODE);
-
-	default: return (OpcodeFormat)0xFF; break;
+		OPCODEFORMAT_CASE(NEG		, OPCODE_R);
+	default: return OPCODE_INVALID; break;
 	}
 }
 #undef OPCODEFORMAT_CASE
@@ -202,7 +205,7 @@ inline bool isSIBindex(const RegisterID id)
 inline RegisterID getSIBbase(const SIB& sib)
 {
 	constexpr static RegisterID table[] = { BP, SP };
-	return sib.base? table[sib.base - 1] : BP;
+	return sib.base? table[sib.base - 1] : NO_REG;
 }
 
 inline RegisterID getSIBindex(const SIB& sib)

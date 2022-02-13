@@ -33,7 +33,23 @@ class Compiler
 	struct BadRegister : std::exception {};
 
 public:
-	void subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint16_t, Opcode>& variants);
+	enum Arg : uint8_t
+	{
+		ARG1_8 = 1,
+		ARG2_8 = (1 << 1)
+	};
+
+	struct SCVariant
+	{
+		Opcode opcode;
+		uint8_t arg = 0;
+
+		SCVariant(Opcode opcode_) : opcode{ opcode_ } {}
+		SCVariant(Opcode opcode_, uint8_t arg_) : opcode{ opcode_ }, arg{ arg_ } {}
+		SCVariant(void) = default;
+	};
+
+	void subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint16_t, SCVariant>& variants);
 	void compileMnemonic(Mnemonic mnemonic); // pbv
 	void compile(std::vector<SyntaxUnit>& syntax);
 	void writeDisp(const IndirectAddress& ia);

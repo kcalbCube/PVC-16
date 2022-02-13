@@ -8,7 +8,7 @@ struct LabelDefinition{ std::string label; };
 struct LabelUse{ std::string label; };
 
 struct Register{ std::string name; };
-struct Constant{ int constant = 0; };
+struct Constant{ unsigned constant = 0; };
 struct String { std::string string; };
 struct Newline {};
 
@@ -25,6 +25,14 @@ struct Mnemonic
 	unsigned line = 0;
 	std::string file;
 	uint16_t describeMnemonics(void) const;
+};
+
+enum MnemonicIndex
+{
+	MI_REGISTER,
+	MI_CONSTANT,
+	MI_LABELUSE,
+	MI_INDIRECT_ADDRESS
 };
 
 enum MnemonicDescription
