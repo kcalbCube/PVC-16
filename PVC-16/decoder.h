@@ -21,6 +21,7 @@ public:
 	static void processCC	(Opcode opcode, uint16_t c1, uint16_t c2);
 	static void processC8C	(Opcode opcode, uint8_t c1, uint16_t c2);
 	static void processJO	(Opcode opcode);
+	static void processMCC8 (Opcode opcode, uint16_t addr, uint16_t c1, uint8_t c2);
 
 	static void process(void);
 };

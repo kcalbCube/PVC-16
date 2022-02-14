@@ -224,6 +224,17 @@ int main(int argc, char** args)
 			printf("\n");
 			break;
 
+		case OPCODE_MCC8:
+		{
+			const auto sib = std::bit_cast<SIB>(data[i++]);
+			const uint16_t c1 = read16(i); i += 2;
+			const uint8_t c2 = data[i++];
+			const uint16_t disp = sib.disp ? read16(i) : 0; i += sib.disp * 2;
+
+			printf("%s %04zX %02zX\n", renderIndirectAddress(sib, disp).c_str(), (unsigned)c1, (unsigned)c2);
+		}
+		break;
+
 		case OPCODE_INVALID:
 			printf("unknown\n");
 			break;

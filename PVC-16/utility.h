@@ -60,8 +60,7 @@ inline void registersDump(void)
 inline std::string renderIndirectAddress(SIB sib, uint16_t disp)
 {
     std::string str = "[";
-    char buffer[9]{};
-    buffer[8] = '\0';
+    char buffer[16]{};
 
     bool opRequired = false;
     if (sib.scale)

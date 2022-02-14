@@ -409,6 +409,16 @@ void Decoder::processMC8(Opcode opcode, uint16_t addr, uint8_t constant)
 	}
 }
 
+void Decoder::processMCC8(Opcode opcode, uint16_t addr, uint16_t c1, uint8_t c2)
+{
+	switch (opcode)
+	{
+	case MEMSET:
+		memset(mc.data + addr, (int)c2, (size_t)c1);
+		break;
+	}
+}
+
 void Decoder::process(void)
 {
 	auto&& ip = getRegister16(IP); 
@@ -592,6 +602,23 @@ void Decoder::process(void)
 			printf("%02zX %04zX\n", (unsigned int)c1, (unsigned int)c2);
 #endif
 		processC8C(opcode, c1, c2);
+	}
+	break;
+
+	case OPCODE_MCC8:
+	{
+		const auto sib = std::bit_cast<SIB>(mc.read8(ip++));
+		const uint16_t c1 = mc.read16(ip); ip += 2;
+		const uint8_t c2 = mc.read8(ip++);
+		const uint16_t disp = sib.disp ? mc.read16(ip) : 0; ip += sib.disp * 2;
+
+		const uint16_t addr = readAddress(sib, disp);
+
+#ifdef ENABLE_WORKFLOW
+		if (vmflags.workflowEnabled)
+			printf("%s{%04zX} %04zX %02zX\n", renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr, (unsigned)c1, (unsigned)c2);
+#endif
+		processMCC8(opcode, addr, c1, c2);
 	}
 	break;
 

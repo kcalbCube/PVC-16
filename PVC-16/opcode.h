@@ -75,6 +75,8 @@ enum Opcode
 	RET,
 	CALL,
 
+	MEMSET,
+
 
 	BRK = 0xCC,
 };
@@ -95,6 +97,7 @@ enum OpcodeFormat
 	OPCODE_MC8,
 	OPCODE_C8C,
 	OPCODE_CC,
+	OPCODE_MCC8,
 	OPCODE_INVALID
 };
 
@@ -151,6 +154,7 @@ __forceinline OpcodeFormat getOpcodeFormat(Opcode opcode)
 		OPCODEFORMAT_CASE(IN_M16	, OPCODE_MC);
 		OPCODEFORMAT_CASE(RET		, OPCODE);
 		OPCODEFORMAT_CASE(NEG		, OPCODE_R);
+		OPCODEFORMAT_CASE(MEMSET	, OPCODE_MCC8);
 	default: return OPCODE_INVALID; break;
 	}
 }

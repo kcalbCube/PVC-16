@@ -1,6 +1,7 @@
 #include "compiler.h"
 #include "utility.h"
 #include <ostream>
+#include <deque>
 
 #include "../PVC-16/opcode.h"
 #include "../PVC-16/registers_define.h"
@@ -106,8 +107,8 @@ void Compiler::subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint1
 	{
 		write(dmnemonic);
 		size_t i = 0;
-		bool dispPresent = false;
-		decltype(IndirectAddress::disp) disp;
+		std::deque<decltype(IndirectAddress::disp)> dispDeque;
+
 		for (auto&& c : mnemonic.mnemonics)
 		{
 			switch (c.index())
@@ -129,14 +130,14 @@ void Compiler::subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint1
 				auto&& ia = std::get<IndirectAddress>(c);
 
 				write(std::bit_cast<uint8_t>(generateSIB(ia)));
-				if (dispPresent = isDispPresent(ia); dispPresent)
-					disp = ia.disp;
+				if (isDispPresent(ia))
+					dispDeque.push_back(ia.disp);
 			}
 				break;
 			}
 			++i;
 		}
-		if (dispPresent)
+		for(auto&& disp : dispDeque)
 			if (disp.index() == 1) // LabelUse
 				writeLabel(std::get<LabelUse>(disp).label);
 			else
@@ -320,6 +321,12 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 	{
 		subcompileMnemonic(mnemonic, {
 				{constructDescription(), RET}
+			});
+	}
+	else if (mnemonic.name == "MEMSET")
+	{
+		subcompileMnemonic(mnemonic, {
+			{constructDescription(INDIRECT_ADDRESS, CONSTANT, CONSTANT), {MEMSET, ARG3_8}}
 			});
 	}
 	else

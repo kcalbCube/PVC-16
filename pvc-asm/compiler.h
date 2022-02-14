@@ -36,7 +36,8 @@ public:
 	enum Arg : uint8_t
 	{
 		ARG1_8 = 1,
-		ARG2_8 = (1 << 1)
+		ARG2_8 = (1 << 1),
+		ARG3_8 = (1 << 2)
 	};
 
 	struct SCVariant
