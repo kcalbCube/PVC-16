@@ -42,9 +42,9 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 
 	case MUL:
 		if (is16register(r1))
-			updateStatus(static_cast<uint16_t>(getRegister16(r1) += readRegister(r2)));
+			updateStatus(static_cast<uint16_t>(getRegister16(r1) *= readRegister(r2)));
 		else
-			updateStatus(static_cast<uint8_t>(getRegister8(r1) += readRegister(r2)));
+			updateStatus(static_cast<uint8_t>(getRegister8(r1) *= readRegister(r2)));
 		break;
 
 	case DIV:
@@ -103,9 +103,9 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 
 	case MUL_C16:
 		if (is16register(r1))
-			updateStatus(static_cast<uint16_t>(getRegister16(r1) += constant));
+			updateStatus(static_cast<uint16_t>(getRegister16(r1) *= constant));
 		else
-			updateStatus(static_cast<uint8_t>(getRegister8(r1) += constant));
+			updateStatus(static_cast<uint8_t>(getRegister8(r1) *= constant));
 		break;
 
 	case DIV_C16:

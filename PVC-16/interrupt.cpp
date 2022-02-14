@@ -20,6 +20,9 @@ void interrupt(const uint8_t interrupt)
 		}
 		break;
 
+	case 0x00:
+		break;
+
 	default:
 		StackController::push(IP);
 		writeRegister(IP, mc.read16(interrupt * 2));

@@ -1,0 +1,98 @@
+.org 22h
+dw @vbi
+
+.org 80h
+bpos: db 0h 0h
+vector: db 2h 1h
+
+process:
+	push %a
+	push %b
+	mov %a [@bpos] ; {h:x, l:y} ;
+	mov %b [@vector] ; {h:dx, l:dy} ;
+	add %ah %bh
+	add %al %bl
+	cmp %ah 11h
+	jng @.skip_xoverflow_handle
+	cmp %ah 14h
+	jg @.overflow_left
+	mov %ah 11h
+	jmp @.xoverflow_finally
+	.overflow_left:
+		mov %ah 0h
+	.xoverflow_finally:
+		neg %bh
+	.skip_xoverflow_handle:
+	cmp %al 5Ch
+	jng @.skip_yoverflow_handle
+	cmp %al 60h
+	jg @.overflow_up
+	mov %al 5Bh
+	jmp @.yoverflow_finally
+	.overflow_up:
+		mov %al 1h
+	.yoverflow_finally:
+		neg %bl
+	.skip_yoverflow_handle:
+	mov [@bpos] %a
+	mov [@vector] %b
+	pop %b
+	pop %a
+	ret
+	
+cls:
+	push %a
+	push %b
+	mov %a 3A98h
+	
+	.loop:
+		mov [%a + @T1] 0000h
+		sub %a 2h
+		jnz @.loop 
+	pop %b
+	pop %a
+	ret
+
+render:
+	push %a
+	push %b
+	push %c
+
+	mov %a [@bpos]  ; {h:x, l:y} ;
+	mov %b %al
+	mul %b 12h
+	add %b %ah
+	add %b @T1
+	
+	mov %c 8h
+	.loop:
+		movb [%b] FFh
+		add %b 12h
+		dec %c
+		jnz @.loop
+	
+	pop %c
+	pop %b
+	pop %a
+	ret	
+
+start:
+	mov %sp FFFFh
+	outb 20h 1h
+	outb 21h 16h
+	out  22h @T1
+	
+	mov %al 1h
+	int 10h
+	
+	.loop:
+		jmp @.loop
+
+vbi:
+	call @cls
+	call @render
+	call @process
+	ret
+
+.org 1000h
+T1:
