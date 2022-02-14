@@ -20,12 +20,14 @@ void interrupt(const uint8_t interrupt)
 		}
 		break;
 
-	case 0x00:
-		break;
-
 	default:
+	{
+		auto addr = mc.read16(interrupt * 2);
+		if (!addr)
+			break;
 		StackController::push(IP);
-		writeRegister(IP, mc.read16(interrupt * 2));
+		writeRegister(IP, addr);
+	}
 		break;
 	}
 }
