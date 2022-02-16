@@ -26,25 +26,56 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		writeRegister(r1, readRegister(r2));
 		break;
 
+	case OR_RR:
+		if (is16register(r1))
+		{
+			auto&& r = getRegister16(r1);
+			r = updateStatus16((unsigned)r | readRegister(r2));
+		}
+		else
+		{
+			auto&& r = getRegister8(r1);
+			r = updateStatus8((unsigned)r | readRegister(r2));
+		}
+		break;
+
 	case ADD:
 		if (is16register(r1))
-			updateStatus(static_cast<uint16_t>(getRegister16(r1) += readRegister(r2)));
+		{
+			auto&& r = getRegister16(r1);
+			r = updateStatus16((unsigned)r + readRegister(r2));
+		}
 		else
-			updateStatus(static_cast<uint8_t>(getRegister8(r1) += readRegister(r2)));
+		{
+			auto&& r = getRegister8(r1);
+			r = updateStatus8((unsigned)r + readRegister(r2));
+		}
 		break;
 
 	case SUB:
 		if (is16register(r1))
-			updateStatus(static_cast<uint16_t>(getRegister16(r1) -= readRegister(r2)));
+		{
+			auto&& r = getRegister16(r1);
+			r = updateStatus16((unsigned)r - readRegister(r2));
+		}
 		else
-			updateStatus(static_cast<uint8_t>(getRegister8(r1) -= readRegister(r2)));
+		{
+			auto&& r = getRegister8(r1);
+			r = updateStatus8((unsigned)r - readRegister(r2));
+		}
 		break;
 
 	case MUL:
 		if (is16register(r1))
-			updateStatus(static_cast<uint16_t>(getRegister16(r1) *= readRegister(r2)));
+		{
+			auto&& r = getRegister16(r1);
+			r = updateStatus16((unsigned)r * readRegister(r2));
+		}
 		else
-			updateStatus(static_cast<uint8_t>(getRegister8(r1) *= readRegister(r2)));
+		{
+			auto&& r = getRegister8(r1);
+			r = updateStatus8((unsigned)r * readRegister(r2));
+		}
 		break;
 
 	case DIV:
@@ -56,10 +87,55 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 			break;
 		}
 		if (is16register(r1))
-			updateStatus(static_cast<uint16_t>(getRegister16(r1) /= r2v));
+		{
+			auto&& r = getRegister16(r1);
+			r = updateStatus16((unsigned)r / readRegister(r2));
+		}
 		else
-			updateStatus(static_cast<uint8_t>(getRegister8(r1) /= r2v));
+		{
+			auto&& r = getRegister8(r1);
+			r = updateStatus8((unsigned)r / readRegister(r2));
+		}
 		break;
+	}
+
+	case SHL_RR:
+	{
+		if (is16register(r1))
+		{
+			auto&& r = getRegister16(r1);
+			r = updateStatus16((unsigned)r << readRegister(r2));
+		}
+		else
+		{
+			auto&& r = getRegister8(r1);
+			r = updateStatus8((unsigned)r << readRegister(r2));
+		}
+		break;
+	}
+	case SHR_RR:
+	{
+		if (is16register(r1))
+		{
+			auto&& r = getRegister16(r1);
+			r = updateStatus16((unsigned)r >> readRegister(r2));
+		}
+		else
+		{
+			auto&& r = getRegister8(r1);
+			r = updateStatus8((unsigned)r >> readRegister(r2));
+		}
+		break;
+	}
+
+	case CMP_RR:
+	{
+		const auto result = readRegister(r1) - readRegister(r2);
+		if (is16register(r1))
+			updateStatus16(result);
+		else
+			updateStatus8(result);
+		status.greater = result > 0;
 	}
 				
 	}
@@ -76,10 +152,11 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 	case CMP_RC:
 	{
 		const auto result = readRegister(r1) - constant;
+
 		if (is16register(r1))
-			updateStatus(static_cast<uint16_t>(result));
+			updateStatus16(result);
 		else
-			updateStatus(static_cast<uint8_t>(result));
+			updateStatus8(result);
 		status.greater = result > 0;
 	}
 	break;
@@ -87,25 +164,43 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 	case ADD_C16:
 	{
 		if (is16register(r1))
-			updateStatus(static_cast<uint16_t>(getRegister16(r1) += constant));
+		{
+			auto&& r = getRegister16(r1);
+			r = updateStatus16((unsigned)r + constant);
+		}
 		else
-			updateStatus(static_cast<uint8_t>(getRegister8(r1) += constant));
+		{
+			auto&& r = getRegister8(r1);
+			r = updateStatus8((unsigned)r + constant);
+		}
 		break;
 	}
 	case SUB_C16:
 	{
 		if (is16register(r1))
-			updateStatus(static_cast<uint16_t>(getRegister16(r1) -= constant));
+		{
+			auto&& r = getRegister16(r1);
+			r = updateStatus16((unsigned)r - constant);
+		}
 		else
-			updateStatus(static_cast<uint8_t>(getRegister8(r1) -= constant));
+		{
+			auto&& r = getRegister8(r1);
+			r = updateStatus8((unsigned)r - constant);
+		}
 		break;
 	}
 
 	case MUL_C16:
 		if (is16register(r1))
-			updateStatus(static_cast<uint16_t>(getRegister16(r1) *= constant));
+		{
+			auto&& r = getRegister16(r1);
+			r = updateStatus16((unsigned)r * constant);
+		}
 		else
-			updateStatus(static_cast<uint8_t>(getRegister8(r1) *= constant));
+		{
+			auto&& r = getRegister8(r1);
+			r = updateStatus8((unsigned)r * constant);
+		}
 		break;
 
 	case DIV_C16:
@@ -116,9 +211,15 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 			break;
 		}
 		if (is16register(r1))
-			updateStatus(static_cast<uint16_t>(getRegister16(r1) /= constant));
+		{
+			auto&& r = getRegister16(r1);
+			r = updateStatus16((unsigned)r / constant);
+		}
 		else
-			updateStatus(static_cast<uint8_t>(getRegister8(r1) /= constant));
+		{
+			auto&& r = getRegister8(r1);
+			r = updateStatus8((unsigned)r / constant);
+		}
 		break;
 	}
 
@@ -136,6 +237,24 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 			writeRegister(r1, busRead(constant));
 		break;
 
+	case LOOP:
+	{
+		if (is16register(r1))
+		{
+			if (--getRegister16(r1))
+				writeRegister(IP, constant);
+		}
+		else
+		{
+			if (--getRegister8(r1))
+				writeRegister(IP, constant);
+		}
+		break;
+	}
+
+	case TEST_RC:
+		status.zero = readRegister(r1) & constant;
+		break;
 
 	}
 }
@@ -160,25 +279,25 @@ void Decoder::processR(Opcode opcode, RegisterID r1)
 	case INC:
 	{
 		if (is16register(r1))
-			updateStatus(static_cast<uint16_t>(++getRegister16(r1)));
+			updateStatus16(static_cast<unsigned>(++getRegister16(r1)));
 		else
-			updateStatus(static_cast<uint8_t>(++getRegister8(r1)));
+			updateStatus8(static_cast<unsigned>(++getRegister8(r1)));
 		break;
 	}
 	case DEC:
 	{
 		if (is16register(r1))
-			updateStatus(static_cast<uint16_t>(--getRegister16(r1)));
+			updateStatus16(static_cast<unsigned>(--getRegister16(r1)));
 		else
-			updateStatus(static_cast<uint8_t>(--getRegister8(r1)));
+			updateStatus8((unsigned)(--getRegister8(r1)));
 		break;
 	}
 	case NEG:
 	{
 		if (is16register(r1))
-			updateStatus(std::bit_cast<uint16_t>((signed short&)(getRegister16(r1)) *= -1));
+			updateStatus16(unsigned((signed short&)(getRegister16(r1)) *= -1));
 		else
-			updateStatus(std::bit_cast<uint8_t>((signed char&)(getRegister8(r1)) *= -1));
+			updateStatus8(unsigned((signed char&)(getRegister8(r1)) *= -1));
 		break;
 	}
 
@@ -272,25 +391,25 @@ void Decoder::processC(Opcode opcode, uint16_t constant)
 		break;
 		case JG:
 		{
-			if (status.greater)
+			if (!status.zero && status.sign == status.overflow)
 				writeRegister(IP, constant);
 		}
 		break;
 		case JNG:
 		{
-			if (!status.greater)
+			if (status.zero || status.sign != status.overflow)
 				writeRegister(IP, constant);
 		}
 		break;
 		case JGZ:
 		{
-			if (status.greater || status.zero)
+			if (status.sign == status.overflow)
 				writeRegister(IP, constant);
 		}
 		break;
 		case JL:
 		{
-			if (!status.greater && !status.zero)
+			if (status.sign != status.overflow)
 				writeRegister(IP, constant);
 		}
 		break;
@@ -324,6 +443,16 @@ void Decoder::processJO(Opcode opcode)
 	case RET:
 	{
 		StackController::pop(IP);
+	}
+	break;
+	case STI:
+	{
+		status.interrupt = 1;
+	}
+	break;
+	case CLI:
+	{
+		status.interrupt = 0;
 	}
 	break;
 	case BRK:

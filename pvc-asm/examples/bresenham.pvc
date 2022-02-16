@@ -1,0 +1,148 @@
+.org 22h
+dw @vbi
+
+.org 80h
+
+; %al, overwrites ;
+abs:
+	test %al 1h
+	jz @.L2
+	neg %al
+	.L2:
+	ret
+
+drawpixel:
+	push %a
+	push %b
+	push %c
+	
+	mov %a [%sp + 8h]
+
+	mov %b %al
+	mul %b 12h
+	add %b @T1
+	
+	mov %c %ah
+	mov %a %ah
+	
+	div %c 8h ; todo: add mod ;
+	mul %c 8h
+	
+	sub %a %c
+	
+	div %c 8h
+	add %b %c
+	
+	mov %c 7h
+	sub %c %a
+	mov %a %c
+
+	mov %c 1h
+	shl %c %a
+	
+	mov %a [%b]
+	or %a %c
+	mov [%b] %a
+	
+	pop %c
+	pop %b
+	pop %a
+	ret
+	
+; %ch - x1, %cl - y1, %dh - x2, %dl - y2 ;
+drawline:
+	push %a
+	push %b
+	push %c
+	push %d
+	push %e
+	
+	mov %al %dh
+	sub %al %ch
+	call @abs
+	mov %ah %al ; ah - dX ;
+	
+	mov %al %dl
+	sub %al %cl
+	call @abs
+	neg %al ; al - -dY ;
+	
+	mov %bh FFh ; bh - signX;
+	mov %bl FFh ; bl - signY ;
+	
+	cmp %ch %dh
+	jgz @.S1
+	neg %bh
+	.S1:
+	
+	cmp %cl %dl
+	jgz @.S2
+	neg %bl
+	.S2:
+	
+	mov %el %ah
+	add %el %al ; el - error ;
+	
+	push %d
+	call @drawpixel
+	pop %d
+	 
+	.loop:
+		cmp %ch %dh
+		jnz @.L1
+		cmp %cl %dl
+		jnz @.L1
+		jmp @.loop_end
+		.L1:
+		
+		push %c
+		call @drawpixel
+		pop %c
+
+		mov %eh %el
+		
+		cmp %eh %al
+		jng @.L2
+			add %el %al
+			add %ch %bh
+		.L2: 
+		cmp %eh %ah
+		jgz @.loop
+			add %el %ah
+			add %cl %bl
+		jmp @.loop
+		
+	.loop_end:
+	
+	pop %e
+	pop %d
+	pop %c
+	pop %b
+	pop %a
+	ret
+
+start:
+	mov %sp FFFFh
+	outb 20h 1h
+	outb 21h 20h
+	out  22h @T1
+
+	mov %al 1h
+	int 10h
+	
+	mov %ch 60h
+	mov %cl 50h
+	
+	mov %dh 5h
+	mov %dl 3h
+	
+	call @drawline
+
+	.loop:
+		jmp @.loop
+
+vbi:
+	ret
+
+.org 1000h
+T1:

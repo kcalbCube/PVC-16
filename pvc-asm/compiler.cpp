@@ -157,7 +157,7 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 	if(mnemonic.name == "INT")
 	{
 		subcompileMnemonic(mnemonic, {
-			{constructDescription(CONSTANT), INT},
+			{constructDescription(CONSTANT), {INT, ARG1_8}},
 			});
 	}
 	else if(mnemonic.name == "MOV")
@@ -177,6 +177,24 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 		subcompileMnemonic(mnemonic, {
 			{constructDescription(INDIRECT_ADDRESS, INDIRECT_ADDRESS), {MOV_MM8, ARG2_8}},
 			{constructDescription(INDIRECT_ADDRESS, CONSTANT), {MOV_MC8, ARG2_8}},
+			});
+	}
+	else if (mnemonic.name == "SHL")
+	{
+		subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER, REGISTER), SHL_RR},
+			});
+	}
+	else if (mnemonic.name == "SHR")
+	{
+		subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER, REGISTER), SHR_RR},
+			});
+	}
+	else if (mnemonic.name == "OR")
+	{
+		subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER, REGISTER), OR_RR},
 			});
 	}
 	else if(mnemonic.name == "ADD")
@@ -253,7 +271,15 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 		subcompileMnemonic(mnemonic, {
 			{constructDescription(REGISTER, CONSTANT), CMP_RC},
 			{constructDescription(REGISTER, LABEL), CMP_RC},
+			{constructDescription(REGISTER, REGISTER), CMP_RR},
 			});
+	} 
+	else if (mnemonic.name == "LOOP")
+	{
+	subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER, CONSTANT), LOOP},
+		{constructDescription(REGISTER, LABEL), LOOP},
+		});
 	}
 	else if (mnemonic.name == "PUSHB")
 	{
@@ -323,10 +349,28 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 				{constructDescription(), RET}
 			});
 	}
+	else if (mnemonic.name == "CLI")
+	{
+		subcompileMnemonic(mnemonic, {
+				{constructDescription(), CLI}
+			});
+	}
+	else if (mnemonic.name == "STI")
+	{
+		subcompileMnemonic(mnemonic, {
+				{constructDescription(), STI}
+			});
+	}
 	else if (mnemonic.name == "MEMSET")
 	{
 		subcompileMnemonic(mnemonic, {
 			{constructDescription(INDIRECT_ADDRESS, CONSTANT, CONSTANT), {MEMSET, ARG3_8}}
+			});
+	}
+	else if (mnemonic.name == "TEST")
+	{
+	subcompileMnemonic(mnemonic, {
+			{constructDescription(REGISTER, CONSTANT), TEST_RC}
 			});
 	}
 	else

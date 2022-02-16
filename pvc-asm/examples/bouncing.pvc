@@ -43,22 +43,19 @@ process:
 render:
 	push %a
 	push %b
-	push %c
 
 	mov %a [@bpos]  ; {h:x, l:y} ;
 	mov %b %al
 	mul %b 12h
-	add %b %ah
-	add %b @T1
+	lea %b [%ah + @T1]
 	
-	mov %c 8h
+	mov %a 8h
 	.loop:
 		movb [%b] FFh
 		add %b 12h
-		dec %c
+		dec %a
 		jnz @.loop
 	
-	pop %c
 	pop %b
 	pop %a
 	ret	

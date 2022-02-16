@@ -84,6 +84,8 @@ void start(void)
     dc.addDevice(new DebugOutputDevice);
     dc.addDevice(new VideoController);
     dc.start();
+
+    status.interrupt = 1;
 #ifdef ENABLE_EXECUTION_TIME_CAPTURE
     auto start = std::chrono::high_resolution_clock::now();
 #endif

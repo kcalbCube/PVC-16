@@ -36,14 +36,17 @@ std::deque<uint8_t> delayedInterrupts;
 
 void addDelayedInterrupt(uint8_t interrupt)
 {
-	delayedInterrupts.push_back(interrupt);
+	if(status.interrupt)
+		delayedInterrupts.push_back(interrupt);
 }
 
 void handleDelayedInterrupts(void)
 {
-	if (!delayedInterrupts.empty())
+	if (!status.interrupt)
+		delayedInterrupts.clear();
+	else if (!delayedInterrupts.empty())
 	{
 		interrupt(delayedInterrupts[0]);
-		delayedInterrupts.pop_back();
+		delayedInterrupts.pop_front();
 	}
 }
