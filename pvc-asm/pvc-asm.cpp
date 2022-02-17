@@ -17,6 +17,7 @@ int main(const int argc, char** args)
     args::CompletionFlag completion(parser, { "complete" });
     args::ValueFlag<std::string> output(parser, "output", "Output file", { 'o', "output"});
     args::Positional<std::string> inputFile(parser, "input", "The input file");
+    args::ValueFlagList<std::string> includeDirs(parser, "include", "The include directories", { 'I' });
 
     try
     {
@@ -38,6 +39,10 @@ int main(const int argc, char** args)
         std::cerr << parser;
         return 1;
     }
+    if (includeDirs)
+        for (auto&& c : args::get(includeDirs))
+            ::includeDirs.push_back(c);
+
     auto start = std::chrono::high_resolution_clock::now();
     std::string fileName = curFile = args::get(inputFile);
     std::ifstream input(fileName);

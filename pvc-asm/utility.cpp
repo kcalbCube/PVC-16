@@ -2,6 +2,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <fstream>
 
 unsigned a16toi(const std::string& str)
 {
@@ -70,4 +71,23 @@ void writeLine(const std::string& file, std::string msg)
 std::string& getNextLine(const std::string& file)
 {
 	return lines[file].emplace_back();
+}
+
+std::string findInclude(const std::string& includeString)
+{
+	if (includeString.empty())
+		return std::string();
+
+	if (std::ifstream(includeString))
+		return includeString;
+
+	for (auto&& dir : includeDirs)
+	{
+		auto full = dir + '/' + includeString;
+		if (std::ifstream(full))
+			return full;
+	}
+
+	return std::string();
+
 }

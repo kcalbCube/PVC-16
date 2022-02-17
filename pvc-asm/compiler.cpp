@@ -2,6 +2,7 @@
 #include "utility.h"
 #include <ostream>
 #include <deque>
+#include <fstream>
 
 #include "../PVC-16/opcode.h"
 #include "../PVC-16/registers_define.h"
@@ -197,6 +198,12 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 		{constructDescription(REGISTER, REGISTER), OR_RR},
 			});
 	}
+	else if (mnemonic.name == "AND")
+	{
+		subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER, REGISTER), AND_RR},
+			});
+	}
 	else if(mnemonic.name == "ADD")
 	{
 		subcompileMnemonic(mnemonic, {
@@ -219,6 +226,14 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 		{constructDescription(REGISTER, REGISTER), DIV},
 		{constructDescription(REGISTER, CONSTANT), DIV_C16},
 		{constructDescription(REGISTER, LABEL), DIV_C16},
+			});
+	}
+	else if (mnemonic.name == "MOD")
+	{
+		subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER, REGISTER), MOD_RR},
+		{constructDescription(REGISTER, CONSTANT), MOD_RC},
+		{constructDescription(REGISTER, LABEL), MOD_RC},
 			});
 	}
 	else if (mnemonic.name == "MUL")
@@ -245,6 +260,12 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 	{
 		subcompileMnemonic(mnemonic, {
 		{constructDescription(REGISTER), NEG},
+			});
+	}
+	else if (mnemonic.name == "NOT")
+	{
+		subcompileMnemonic(mnemonic, {
+		{constructDescription(REGISTER), NOT},
 			});
 	}
 	else if(mnemonic.name == "DEC")
@@ -349,6 +370,18 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 				{constructDescription(), RET}
 			});
 	}
+	else if (mnemonic.name == "PUSHA")
+	{
+	subcompileMnemonic(mnemonic, {
+			{constructDescription(), PUSHA}
+		});
+	}
+	else if (mnemonic.name == "POPA")
+	{
+	subcompileMnemonic(mnemonic, {
+			{constructDescription(), POPA}
+		});
+	}
 	else if (mnemonic.name == "CLI")
 	{
 		subcompileMnemonic(mnemonic, {
@@ -380,7 +413,7 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 
 void Compiler::compile(std::vector<SyntaxUnit>& syntax)
 {
-	for (auto&& su : syntax)
+	for (size_t i = 0; i < syntax.size(); ++i)
 		std::visit(visit_overload{
 				[&](Mnemonic& mnemonic) -> void
 				{
@@ -391,7 +424,7 @@ void Compiler::compile(std::vector<SyntaxUnit>& syntax)
 					}
 					else if (mnemonic.name == "DB")
 					{
-						for(auto&& v : mnemonic.mnemonics)
+						for (auto&& v : mnemonic.mnemonics)
 						{
 							std::visit(visit_overload
 								{
@@ -401,7 +434,7 @@ void Compiler::compile(std::vector<SyntaxUnit>& syntax)
 									},
 									[&](String s) -> void
 									{
-										for(auto&& c : s.string)
+										for (auto&& c : s.string)
 										{
 											write(c);
 										}
@@ -426,6 +459,37 @@ void Compiler::compile(std::vector<SyntaxUnit>& syntax)
 									[&](auto) -> void { error(mnemonic.file, mnemonic.line, "bad dw argument."); }
 								}, v);
 						}
+					else if (mnemonic.name == ".INCLUDE")
+					{
+						if (mnemonic.describeMnemonics() == constructDescription(STRING))
+						{
+							auto&& includeFile = findInclude(std::get<String>(mnemonic.mnemonics[0]).string);
+							if (includeFile.empty())
+							{
+								error(mnemonic.file, mnemonic.line, "include file not found.");
+								return;
+							}
+							curFile = includeFile;
+
+							std::ifstream input(includeFile);
+							std::string source;
+							reserveLines(includeFile);
+
+							std::getline(input, source, '\0');
+							input.clear();
+							input.seekg(0, std::ios::beg);
+
+							while (std::getline(input, getNextLine(includeFile)));
+
+							auto tokens = Tokenizer::tokenize(source);
+							auto lexemas = Lexer::lex(tokens);
+							auto syntaxis = Syntaxer::syntaxParse(lexemas);
+							syntax.erase(std::begin(syntax) + i);
+							syntax.insert(std::begin(syntax) + i--, std::begin(syntaxis), std::end(syntaxis));
+						}
+						else
+							error(mnemonic.file, mnemonic.line, "bad include argument.");
+					}
 					else
 						compileMnemonic(mnemonic);
 				},
@@ -446,7 +510,7 @@ void Compiler::compile(std::vector<SyntaxUnit>& syntax)
 					}
 				},
 				[&](const Newline& nl) -> void {}
-			}, su);
+			}, syntax[i]);
 }
 
 void Compiler::writeInOstream(std::ostream& output)

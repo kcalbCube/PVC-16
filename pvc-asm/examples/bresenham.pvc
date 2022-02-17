@@ -3,6 +3,8 @@ dw @vbi
 
 .org 80h
 
+.include "stdvideo.inc"
+
 ; %al, overwrites ;
 abs:
 	test %al 1h
@@ -11,51 +13,10 @@ abs:
 	.L2:
 	ret
 
-drawpixel:
-	push %a
-	push %b
-	push %c
-	
-	mov %a [%sp + 8h]
-
-	mov %b %al
-	mul %b 12h
-	add %b @T1
-	
-	mov %c %ah
-	mov %a %ah
-	
-	div %c 8h ; todo: add mod ;
-	mul %c 8h
-	
-	sub %a %c
-	
-	div %c 8h
-	add %b %c
-	
-	mov %c 7h
-	sub %c %a
-	mov %a %c
-
-	mov %c 1h
-	shl %c %a
-	
-	mov %a [%b]
-	or %a %c
-	mov [%b] %a
-	
-	pop %c
-	pop %b
-	pop %a
-	ret
 	
 ; %ch - x1, %cl - y1, %dh - x2, %dl - y2 ;
 drawline:
-	push %a
-	push %b
-	push %c
-	push %d
-	push %e
+	pusha
 	
 	mov %al %dh
 	sub %al %ch
@@ -67,8 +28,7 @@ drawline:
 	call @abs
 	neg %al ; al - -dY ;
 	
-	mov %bh FFh ; bh - signX;
-	mov %bl FFh ; bl - signY ;
+	mov %b FFFFh ; bh - signX, bl - signY ;
 	
 	cmp %ch %dh
 	jgz @.S1
@@ -84,7 +44,7 @@ drawline:
 	add %el %al ; el - error ;
 	
 	push %d
-	call @drawpixel
+	call @setpixelm1
 	pop %d
 	 
 	.loop:
@@ -96,17 +56,15 @@ drawline:
 		.L1:
 		
 		push %c
-		call @drawpixel
+		call @setpixelm1
 		pop %c
-
-		mov %eh %el
 		
-		cmp %eh %al
+		cmp %el %al
 		jng @.L2
 			add %el %al
 			add %ch %bh
 		.L2: 
-		cmp %eh %ah
+		cmp %el %ah
 		jgz @.loop
 			add %el %ah
 			add %cl %bl
@@ -114,11 +72,7 @@ drawline:
 		
 	.loop_end:
 	
-	pop %e
-	pop %d
-	pop %c
-	pop %b
-	pop %a
+	popa
 	ret
 
 start:

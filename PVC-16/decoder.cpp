@@ -7,7 +7,6 @@
 #include "stack.h"
 #include "vmflags.h"
 #include "bus.h"
-
 #include <magic_enum.hpp>
 
 #pragma warning(disable: 4062)
@@ -99,6 +98,27 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		break;
 	}
 
+	case MOD_RR:
+	{
+		auto r2v = readRegister(r2);
+		if (r2v == 0)
+		{
+			interrupt(DE);
+			break;
+		}
+		if (is16register(r1))
+		{
+			auto&& r = getRegister16(r1);
+			r = updateStatus16((unsigned)r % readRegister(r2));
+		}
+		else
+		{
+			auto&& r = getRegister8(r1);
+			r = updateStatus8((unsigned)r % readRegister(r2));
+		}
+		break;
+	}
+
 	case SHL_RR:
 	{
 		if (is16register(r1))
@@ -128,6 +148,21 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		break;
 	}
 
+	case AND_RR:
+	{
+		if (is16register(r1))
+		{
+			auto&& r = getRegister16(r1);
+			r = updateStatus16((unsigned)r & readRegister(r2));
+		}
+		else
+		{
+			auto&& r = getRegister8(r1);
+			r = updateStatus8((unsigned)r & readRegister(r2));
+		}
+		break;
+	}
+
 	case CMP_RR:
 	{
 		const auto result = readRegister(r1) - readRegister(r2);
@@ -137,6 +172,9 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 			updateStatus8(result);
 		status.greater = result > 0;
 	}
+	break;
+
+
 				
 	}
 }
@@ -223,6 +261,26 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 		break;
 	}
 
+	case MOD_RC:
+	{
+		if (constant == 0)
+		{
+			interrupt(DE);
+			break;
+		}
+		if (is16register(r1))
+		{
+			auto&& r = getRegister16(r1);
+			r = updateStatus16((unsigned)r % constant);
+		}
+		else
+		{
+			auto&& r = getRegister8(r1);
+			r = updateStatus8((unsigned)r % constant);
+		}
+		break;
+	}
+
 	case OUT_R:
 		if (is16register(r1))
 			busWrite16(constant, getRegister16(r1));
@@ -284,6 +342,22 @@ void Decoder::processR(Opcode opcode, RegisterID r1)
 			updateStatus8(static_cast<unsigned>(++getRegister8(r1)));
 		break;
 	}
+
+	case NOT:
+	{
+		if (is16register(r1))
+		{
+			auto&& r = getRegister16(r1);
+			updateStatus16(static_cast<unsigned>(r = ~r));
+		}
+		else
+		{
+			auto&& r = getRegister8(r1);
+			updateStatus8(static_cast<unsigned>(r = ~r));
+		}
+		break;
+	}
+
 	case DEC:
 	{
 		if (is16register(r1))
@@ -309,6 +383,25 @@ void Decoder::processR(Opcode opcode, RegisterID r1)
 	case PUSH_R:
 	{
 		StackController::push(r1);
+		break;
+	}
+
+	case PUSHA:
+	{
+		StackController::push(A);
+		StackController::push(B);
+		StackController::push(C);
+		StackController::push(D);
+		StackController::push(E);
+		break;
+	}
+	case POPA:
+	{
+		StackController::push(E);
+		StackController::push(D);
+		StackController::push(C);
+		StackController::push(B);
+		StackController::push(A);
 		break;
 	}
 	}

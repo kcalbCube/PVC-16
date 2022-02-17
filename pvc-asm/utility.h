@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <iostream>
+#include <vector>
 
 unsigned a16toi(const std::string& str);
 
@@ -17,6 +18,9 @@ void writeLine(const std::string& file, std::string msg);
 
 std::string& getNextLine(const std::string& file);
 
+std::string findInclude(const std::string& includeString);
+
+inline std::vector<std::string> includeDirs;
 inline std::string curFile = ""; // fixme
 
 #define m1628(src) static_cast<uint8_t>(src), static_cast<uint8_t>((src) >> 8)
