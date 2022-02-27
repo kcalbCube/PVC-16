@@ -12,17 +12,10 @@ void MemoryController::write8(const addr_t addr, const uint8_t towrite)
 
 void MemoryController::write16(const addr_t addr, const uint16_t towrite)
 {
-	union
-	{
-		struct 
-		{
-			uint8_t h, l;
-		};
-		uint16_t u16;
-	};
-	u16 = towrite;
-	write8(addr, h);
-	write8(addr + 1, l);
+	using T = struct { uint8_t h, l; };
+	auto val = std::bit_cast<T>(towrite);
+	write8(addr		, val.h);
+	write8(addr + 1 , val.l);
 
 }
 

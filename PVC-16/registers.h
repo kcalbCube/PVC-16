@@ -45,12 +45,11 @@ inline Register registers[AH];
 
 inline void writeRegister(const RegisterID id, const uint16_t value, bool shouldUpdateStatus = false)
 {
-
 	if (is16register(id))
 	{
 		if (shouldUpdateStatus)
 			updateStatus16(value);
-		registers[static_cast<size_t>(id)].u16 = value;
+		registers[id].u16 = value;
 		return;
 	}
 	if (shouldUpdateStatus)

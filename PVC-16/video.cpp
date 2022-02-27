@@ -17,7 +17,7 @@ void VideoController::process(void)
 	tick = 0;
 
 	auto mode = busRead(VIDEOCONTROLLER_MODE);
-	if (mode != modeSet)
+	if (!mode || mode != modeSet)
 		return;
 
 	switch (mode)
