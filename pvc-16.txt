@@ -1,0 +1,131 @@
+instructions
+	mov
+		mov  reg 	reg
+		mov  reg 	imm16
+		mov  reg 	[addr]
+		mov  [addr] reg
+		mov  [addr] imm16
+		movb [addr] imm8
+		mov  [addr] [addr]
+		movb [addr] [addr]
+	add
+		add  reg 	reg
+		add  reg 	imm16
+
+	sub
+		sub  reg 	reg
+		sub  reg 	imm16
+	mul
+		mul  reg 	reg 
+		mul  reg 	imm16
+	div
+		div  reg 	reg		#DE if second reg = 0h
+		div  reg 	imm16	#DE if second reg = 0h
+	lea
+		lea	 reg	[addr]
+	inc
+		inc	 reg
+	dec
+		dec	 reg
+	int
+		int  imm8			interrupt
+	cmp
+		cmp  reg 	imm8
+		cmp  reg 	reg 
+	jumps
+		jmp  imm16	
+		jz	 imm16
+		jnz  imm16
+		jg	 imm16			signed
+		jng	 imm16			signed
+		jgz  imm16			signed
+		jl	 imm16			signed
+	push
+		push reg
+		push imm16
+		pushb imm8
+		pusha               push all common registers
+	pop
+		pop	 reg
+		pop  [addr]
+		popb [addr]
+		pop
+		popb
+		popa 				pop all common registers
+	out
+		outb [addr]
+		out  [addr]
+		out  reg
+		outb imm8
+		out  imm16
+	in
+		inb  [addr]
+		in	 [addr]
+		in	 reg
+	neg
+		neg	 reg
+	ret
+		ret
+	call
+		call
+	memset
+		memset [addr] imm16 imm8
+	cli
+		cli					sets interrupt flag to 0
+	sti
+		sti 				sets interrupt flag to 1
+	loop
+		loop reg 	imm16
+	test
+		test reg 	imm16
+		test reg 	reg 
+	not
+		not	 reg
+	and
+		and	 reg	reg
+	or
+		or	 reg	reg
+	shl
+		shl	 reg	reg
+	shr
+		shr	 reg	reg
+	mod
+		mod	 reg	reg
+		mod  reg    imm16
+	xor
+
+	reg = any register or its fraction.
+	labels = imm16
+	[addr] = indirect address.
+
+registers
+	common
+		A
+		B
+		C
+		D
+		E
+		F
+		SI
+	uncommon
+		BP
+		SP
+		IP
+	
+indirect address
+	indirect address = [base reg + index reg + disp imm16]
+	base reg = BP or SP
+	index reg = common register, no fraction
+	At least one element should be present
+
+interrupts
+	interrupt - 0h-FFh imm8
+	int x == call interrupttable[x*2]
+	interrupttable are placed in 0h address
+	
+	Interrupt flag blocks generating interrupts if zero, boths from devices and int opcode.
+	
+	#HALT	int 0h
+	#DE		int 1h
+	#VC		int 10h	videocontroller
+	#VBI	int 11h videocontroller

@@ -5,6 +5,9 @@
 
 void interrupt(const uint8_t interrupt)
 {
+	if (!status.interrupt)
+		return;
+
 	switch(interrupt)
 	{
 	case HALT:
