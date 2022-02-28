@@ -1,6 +1,7 @@
 #include "video.h"
 #include "memory.h"
 #include "interrupt.h"
+#include "utility.h"
 
 void VideoController::process(void)
 {
@@ -8,11 +9,10 @@ void VideoController::process(void)
 		switch (op)
 		{
 		case Operation::VIDEOCONTROLLER_SET_MODE:
-			setVideoMode((VideoMode)busRead(VIDEOCONTROLLER_MODE));
+			setVideoMode(static_cast<VideoMode>(busRead(VIDEOCONTROLLER_MODE)));
 			break;
 		}
-	auto ticksDelay = busRead(VIDEOCONTROLLER_TICKSDELAY);
-	if (tick <= ticksDelay)
+	if (const auto ticksDelay = busRead(VIDEOCONTROLLER_TICKSDELAY); tick <= ticksDelay)
 		return;
 	tick = 0;
 
@@ -44,6 +44,8 @@ void VideoController::process(void)
 		addDelayedInterrupt(VBI);
 	}
 	break;
+	default:
+		UNREACHABLE;
 	}
 
 	SDL_RenderPresent(renderer);

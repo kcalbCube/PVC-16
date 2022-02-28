@@ -13,8 +13,8 @@
 
 uint16_t Decoder::readAddress(SIB sib, const uint16_t disp)
 {
-	return static_cast<uint16_t>((sib.index ? readRegister(getSIBindex(sib)) : 0) * (1 << sib.scale) +
-		readRegister(getSIBbase(sib)) + disp);
+	return static_cast<uint16_t>((sib.index ? readRegister(sib.getIndex()) : 0) * (1 << sib.scale) +
+		readRegister(sib.getBase()) + disp);
 }
 
 void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
@@ -29,12 +29,12 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16((unsigned)r | readRegister(r2));
+			r = updateStatus16(static_cast<unsigned>(r) | readRegister(r2));
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8((unsigned)r | readRegister(r2));
+			r = updateStatus8(static_cast<unsigned>(r) | readRegister(r2));
 		}
 		break;
 
@@ -42,12 +42,12 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16((unsigned)r + readRegister(r2));
+			r = updateStatus16(static_cast<unsigned>(r) + readRegister(r2));
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8((unsigned)r + readRegister(r2));
+			r = updateStatus8(static_cast<unsigned>(r) + readRegister(r2));
 		}
 		break;
 
@@ -55,12 +55,12 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16((unsigned)r - readRegister(r2));
+			r = updateStatus16(static_cast<unsigned>(r) - readRegister(r2));
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8((unsigned)r - readRegister(r2));
+			r = updateStatus8(static_cast<unsigned>(r) - readRegister(r2));
 		}
 		break;
 
@@ -68,18 +68,18 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16((unsigned)r * readRegister(r2));
+			r = updateStatus16(static_cast<unsigned>(r) * readRegister(r2));
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8((unsigned)r * readRegister(r2));
+			r = updateStatus8(static_cast<unsigned>(r) * readRegister(r2));
 		}
 		break;
 
 	case DIV:
 	{
-		auto r2v = readRegister(r2);
+		const auto r2v = readRegister(r2);
 		if (r2v == 0)
 		{
 			interrupt(DE);
@@ -88,19 +88,19 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16((unsigned)r / readRegister(r2));
+			r = updateStatus16(static_cast<unsigned>(r) / readRegister(r2));
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8((unsigned)r / readRegister(r2));
+			r = updateStatus8(static_cast<unsigned>(r) / readRegister(r2));
 		}
 		break;
 	}
 
 	case MOD_RR:
 	{
-		auto r2v = readRegister(r2);
+		const auto r2v = readRegister(r2);
 		if (r2v == 0)
 		{
 			interrupt(DE);
@@ -109,12 +109,12 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16((unsigned)r % readRegister(r2));
+			r = updateStatus16(static_cast<unsigned>(r) % readRegister(r2));
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8((unsigned)r % readRegister(r2));
+			r = updateStatus8(static_cast<unsigned>(r) % readRegister(r2));
 		}
 		break;
 	}
@@ -124,12 +124,12 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16((unsigned)r << readRegister(r2));
+			r = updateStatus16(static_cast<unsigned>(r) << readRegister(r2));
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8((unsigned)r << readRegister(r2));
+			r = updateStatus8(static_cast<unsigned>(r) << readRegister(r2));
 		}
 		break;
 	}
@@ -138,12 +138,12 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16((unsigned)r >> readRegister(r2));
+			r = updateStatus16(static_cast<unsigned>(r) >> readRegister(r2));
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8((unsigned)r >> readRegister(r2));
+			r = updateStatus8(static_cast<unsigned>(r) >> readRegister(r2));
 		}
 		break;
 	}
@@ -153,12 +153,12 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16((unsigned)r & readRegister(r2));
+			r = updateStatus16(static_cast<unsigned>(r) & readRegister(r2));
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8((unsigned)r & readRegister(r2));
+			r = updateStatus8(static_cast<unsigned>(r) & readRegister(r2));
 		}
 		break;
 	}
@@ -173,7 +173,8 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		status.greater = result > 0;
 	}
 	break;
-
+	default:
+		UNREACHABLE;
 
 				
 	}
@@ -204,12 +205,12 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16((unsigned)r + constant);
+			r = updateStatus16(static_cast<unsigned>(r) + constant);
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8((unsigned)r + constant);
+			r = updateStatus8(static_cast<unsigned>(r) + constant);
 		}
 		break;
 	}
@@ -218,12 +219,12 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16((unsigned)r - constant);
+			r = updateStatus16(static_cast<unsigned>(r) - constant);
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8((unsigned)r - constant);
+			r = updateStatus8(static_cast<unsigned>(r) - constant);
 		}
 		break;
 	}
@@ -232,12 +233,12 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16((unsigned)r * constant);
+			r = updateStatus16(static_cast<unsigned>(r) * constant);
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8((unsigned)r * constant);
+			r = updateStatus8(static_cast<unsigned>(r) * constant);
 		}
 		break;
 
@@ -251,12 +252,12 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16((unsigned)r / constant);
+			r = updateStatus16(static_cast<unsigned>(r) / constant);
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8((unsigned)r / constant);
+			r = updateStatus8(static_cast<unsigned>(r) / constant);
 		}
 		break;
 	}
@@ -271,12 +272,12 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16((unsigned)r % constant);
+			r = updateStatus16(static_cast<unsigned>(r) % constant);
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8((unsigned)r % constant);
+			r = updateStatus8(static_cast<unsigned>(r) % constant);
 		}
 		break;
 	}
@@ -313,6 +314,8 @@ void Decoder::processRC(Opcode opcode, RegisterID r1, uint16_t constant)
 	case TEST_RC:
 		status.zero = readRegister(r1) & constant;
 		break;
+	default:
+		UNREACHABLE;
 
 	}
 }
@@ -322,11 +325,13 @@ void Decoder::processRM(Opcode opcode, RegisterID r1, uint16_t addr)
 	switch (opcode)
 	{
 	case MOV_RM:
-		mc.readInRegister(addr, r1);
+		(void)mc.readInRegister(addr, r1);
 		break;
 	case LEA:
 		writeRegister(r1, addr);
 		break;
+	default:
+		UNREACHABLE;
 	}
 }
 
@@ -337,9 +342,9 @@ void Decoder::processR(Opcode opcode, RegisterID r1)
 	case INC:
 	{
 		if (is16register(r1))
-			updateStatus16(static_cast<unsigned>(++getRegister16(r1)));
+			updateStatus16(++getRegister16(r1));
 		else
-			updateStatus8(static_cast<unsigned>(++getRegister8(r1)));
+			updateStatus8(++getRegister8(r1));
 		break;
 	}
 
@@ -348,12 +353,12 @@ void Decoder::processR(Opcode opcode, RegisterID r1)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			updateStatus16(static_cast<unsigned>(r = ~r));
+			updateStatus16(r = ~r);
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			updateStatus8(static_cast<unsigned>(r = ~r));
+			updateStatus8(r = ~r);
 		}
 		break;
 	}
@@ -361,17 +366,17 @@ void Decoder::processR(Opcode opcode, RegisterID r1)
 	case DEC:
 	{
 		if (is16register(r1))
-			updateStatus16(static_cast<unsigned>(--getRegister16(r1)));
+			updateStatus16(--getRegister16(r1));
 		else
-			updateStatus8((unsigned)(--getRegister8(r1)));
+			updateStatus8(--getRegister8(r1));
 		break;
 	}
 	case NEG:
 	{
 		if (is16register(r1))
-			updateStatus16(unsigned((signed short&)(getRegister16(r1)) *= -1));
+			updateStatus16(static_cast<unsigned>(reinterpret_cast<short&>(getRegister16(r1)) *= -1));
 		else
-			updateStatus8(unsigned((signed char&)(getRegister8(r1)) *= -1));
+			updateStatus8(static_cast<unsigned>(reinterpret_cast<int8_t&>(getRegister8(r1)) *= -1));
 		break;
 	}
 
@@ -393,10 +398,12 @@ void Decoder::processR(Opcode opcode, RegisterID r1)
 		StackController::push(C);
 		StackController::push(D);
 		StackController::push(E);
+		StackController::push(SI);
 		break;
 	}
 	case POPA:
 	{
+		StackController::push(SI);
 		StackController::push(E);
 		StackController::push(D);
 		StackController::push(C);
@@ -404,16 +411,20 @@ void Decoder::processR(Opcode opcode, RegisterID r1)
 		StackController::push(A);
 		break;
 	}
+	default:
+		UNREACHABLE;
 	}
 }
 
-void Decoder::processMR(Opcode opcode, uint16_t addr, RegisterID r1)
+void Decoder::processMR(const Opcode opcode, const uint16_t addr, const RegisterID r1)
 {
 	switch (opcode)
 	{
 	case MOV_MR:
 		mc.writeFromRegister(addr, r1);
 		break;
+	default:
+		UNREACHABLE;
 	}
 }
 
@@ -432,7 +443,8 @@ void Decoder::processM(Opcode opcode, uint16_t addr)
 		mc.write16(addr, StackController::pop16());
 	}
 	break;
-
+	default:
+		UNREACHABLE;
 
 	}
 }
@@ -452,6 +464,8 @@ void Decoder::processC8(Opcode opcode, uint8_t constant)
 		interrupt(constant);
 	}
 	break;
+	default:
+		UNREACHABLE;
 	}
 }
 
@@ -515,6 +529,9 @@ void Decoder::processC(Opcode opcode, uint16_t constant)
 			ip = constant;
 		}
 		break;
+
+		default:
+			UNREACHABLE;
 	}
 }
 
@@ -554,6 +571,8 @@ void Decoder::processJO(Opcode opcode)
 	}
 	break;
 	case NOP: break;
+	default:
+		UNREACHABLE;
 	}
 }
 
@@ -566,6 +585,8 @@ void Decoder::processCC(Opcode opcode, uint16_t c1, uint16_t c2)
 		busWrite16(c2, c1);
 	}
 	break;
+	default:
+		UNREACHABLE;
 	}
 }
 
@@ -578,6 +599,8 @@ void Decoder::processC8C(Opcode opcode, uint8_t c1, uint16_t c2)
 		busWrite(c2, c1);
 	}
 	break;
+	default:
+		UNREACHABLE;
 	}
 }
 
@@ -595,6 +618,8 @@ void Decoder::processMM(Opcode opcode, uint16_t addr1, uint16_t addr2)
 		mc.write8(addr1, mc.read8(addr2));
 	}
 	break;
+	default:
+		UNREACHABLE;
 	}
 }
 
@@ -610,7 +635,7 @@ void Decoder::processMC(Opcode opcode, uint16_t addr, uint16_t constant)
 		busWrite(constant, mc.read8(addr));
 		break;
 	case OUT_M16:
-		busWrite(constant, mc.read16(addr));
+		busWrite16(constant, mc.read16(addr));
 		break;
 	case IN_M8:
 		mc.write8(addr, busRead(constant));
@@ -618,6 +643,8 @@ void Decoder::processMC(Opcode opcode, uint16_t addr, uint16_t constant)
 	case IN_M16:
 		mc.write16(addr, busRead16(constant));
 		break;
+	default:
+		UNREACHABLE;
 	}
 }
 
@@ -628,6 +655,8 @@ void Decoder::processMC8(Opcode opcode, uint16_t addr, uint8_t constant)
 	case MOV_MC8:
 		mc.write8(addr, constant);
 		break;
+	default:
+		UNREACHABLE;
 	}
 }
 
@@ -636,8 +665,10 @@ void Decoder::processMCC8(Opcode opcode, uint16_t addr, uint16_t c1, uint8_t c2)
 	switch (opcode)
 	{
 	case MEMSET:
-		memset(mc.data + addr, (int)c2, (size_t)c1);
+		memset(mc.data + addr, c2, c1);
 		break;
+	default:
+		UNREACHABLE;
 	}
 }
 
@@ -650,9 +681,9 @@ void Decoder::process(void)
 	if (vmflags.workflowEnabled)
 	{
 		if(auto&& opc = magic_enum::enum_name(opcode); opc.empty())
-			printf("%04X: %zX ", (unsigned int)(ip - 1), (unsigned int)opcode);
+			printf("%04X: %X ", (ip - 1), opcode);
 		else
-			printf("%04X: %s ", (unsigned int)(ip - 1), std::string(opc).c_str());
+			printf("%04X: %s ", (ip - 1), std::string(opc).c_str());
 	}
 #endif
 
@@ -677,7 +708,7 @@ void Decoder::process(void)
 		ip += 2;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%%%s %04zX\n", registerId2registerName[r1].c_str(), (unsigned int)c);
+			printf("%%%s %04X\n", registerId2registerName[r1].c_str(), c);
 #endif
 		processRC(opcode, r1, c);
 	}
@@ -701,10 +732,10 @@ void Decoder::process(void)
 
 		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
 		const uint16_t addr = readAddress(sib, disp);
-		ip += sib.disp * 2;
+		ip += sib.disp ? 2 : 0;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%%%s %s{%04zX}\n", registerId2registerName[r1].c_str(), renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr);
+			printf("%%%s %s{%04X}\n", registerId2registerName[r1].c_str(), renderIndirectAddress(sib, disp).c_str(), addr);
 #endif
 		processRM(opcode, r1, addr);
 	}
@@ -717,10 +748,10 @@ void Decoder::process(void)
 		ip += 2;
 		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
 		const uint16_t addr = readAddress(sib, disp);
-		ip += sib.disp * 2;
+		ip += sib.disp ? 2 : 0;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%s{%04zX} %04zX\n", renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr, c);
+			printf("%s{%04X} %04X\n", renderIndirectAddress(sib, disp).c_str(), addr, c);
 #endif
 		processMC(opcode, addr, c);
 	}
@@ -732,10 +763,10 @@ void Decoder::process(void)
 		const auto c = mc.read8(ip++);
 		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
 		const uint16_t addr = readAddress(sib, disp);
-		ip += sib.disp * 2;
+		ip += sib.disp ? 2 : 0;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%s{%04zX} %04zX\n", renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr, c);
+			printf("%s{%04X} %04X\n", renderIndirectAddress(sib, disp).c_str(), addr, c);
 #endif
 		processMC8(opcode, addr, c);
 	}
@@ -747,10 +778,10 @@ void Decoder::process(void)
 		const auto r1  = static_cast<RegisterID>(mc.read8(ip++));
 		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
 		const uint16_t addr = readAddress(sib, disp);
-		ip += sib.disp * 2;
+		ip += sib.disp ? 2 : 0;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%s{%04zX} %%%s\n", renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr, registerId2registerName[r1].c_str());
+			printf("%s{%04X} %%%s\n", renderIndirectAddress(sib, disp).c_str(), addr, registerId2registerName[r1].c_str());
 #endif
 		processMR(opcode, addr, r1);
 
@@ -762,14 +793,14 @@ void Decoder::process(void)
 		const auto sib1 = std::bit_cast<SIB>(mc.read8(ip++));
 		const auto sib2 = std::bit_cast<SIB>(mc.read8(ip++));
 		const uint16_t disp1 = sib1.disp ? mc.read16(ip) : 0;
-		ip += sib1.disp * 2;
+		ip += sib1.disp ? 2 : 0;
 		const uint16_t disp2 = sib2.disp ? mc.read16(ip) : 0;
-		ip += sib2.disp * 2;
+		ip += sib2.disp ? 2 : 0;
 		const uint16_t addr1 = readAddress(sib1, disp1);
 		const uint16_t addr2 = readAddress(sib1, disp1);
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%s{%04zX} %s{%04zX}\n", renderIndirectAddress(sib1, disp1).c_str(), (unsigned int)addr1, renderIndirectAddress(sib2, disp2).c_str(), (unsigned int)addr2);
+			printf("%s{%04X} %s{%04X}\n", renderIndirectAddress(sib1, disp1).c_str(), addr1, renderIndirectAddress(sib2, disp2).c_str(), addr2);
 #endif
 		processMM(opcode, addr1, addr2);
 
@@ -781,7 +812,7 @@ void Decoder::process(void)
 		const auto c8 = mc.read8(ip++);
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%02zX\n", (unsigned int)c8);
+			printf("%02X\n", c8);
 #endif
 		processC8(opcode, c8);
 	}
@@ -793,7 +824,7 @@ void Decoder::process(void)
 		ip += 2;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%04zX\n", (unsigned int)c);
+			printf("%04X\n", c);
 #endif
 		processC(opcode, c);
 	}
@@ -807,7 +838,7 @@ void Decoder::process(void)
 		ip += 2;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%04zX %04zX\n", (unsigned int)c1, (unsigned int)c2);
+			printf("%04X %04X\n", c1, c2);
 #endif
 		processCC(opcode, c1, c2);
 	}
@@ -821,7 +852,7 @@ void Decoder::process(void)
 
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%02zX %04zX\n", (unsigned int)c1, (unsigned int)c2);
+			printf("%02X %04X\n", c1, c2);
 #endif
 		processC8C(opcode, c1, c2);
 	}
@@ -830,15 +861,17 @@ void Decoder::process(void)
 	case OPCODE_MCC8:
 	{
 		const auto sib = std::bit_cast<SIB>(mc.read8(ip++));
-		const uint16_t c1 = mc.read16(ip); ip += 2;
+		const uint16_t c1 = mc.read16(ip);
+		ip += 2;
 		const uint8_t c2 = mc.read8(ip++);
-		const uint16_t disp = sib.disp ? mc.read16(ip) : 0; ip += sib.disp * 2;
+		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
+		ip += sib.disp ? 2 : 0;
 
 		const uint16_t addr = readAddress(sib, disp);
 
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%s{%04zX} %04zX %02zX\n", renderIndirectAddress(sib, disp).c_str(), (unsigned int)addr, (unsigned)c1, (unsigned)c2);
+			printf("%s{%04X} %04X %02X\n", renderIndirectAddress(sib, disp).c_str(), addr, c1, c2);
 #endif
 		processMCC8(opcode, addr, c1, c2);
 	}
@@ -853,7 +886,9 @@ void Decoder::process(void)
 		break;
 
 	case OPCODE_INVALID:
-		printf("%04zX - not handled op %zX\n", ip-1, (int)opcode);
+		printf("%04X - not handled op %02X\n", ip-1, opcode);
 		break;
+	default:
+		UNREACHABLE;
 	}
 }

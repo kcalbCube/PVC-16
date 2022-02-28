@@ -18,7 +18,6 @@ class DeviceController
 public:
 	std::deque<Operation> operations;
 	std::deque<std::function<void()>> workList, emptyList;
-	//std::chrono::duration lag = std::chrono::milliseconds(1);
 	std::vector<Device*> devices;
 	void start(void);
 	void addDevice(Device* device);
@@ -33,9 +32,10 @@ public:
 	unsigned tick = 0;
 
 	virtual void process(void) = 0;
+	virtual ~Device(void) = default;
 };
 
 class DebugOutputDevice : public Device
 {
-	void process(void);
+	void process(void) override;
 };

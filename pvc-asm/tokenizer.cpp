@@ -21,7 +21,7 @@ std::vector<Token> Tokenizer::coreTokenize(std::string src)
 
     std::ranges::copy(tok, std::back_inserter(tokens));
     bool (std::string::*starts_with) (char const) const = &std::string::starts_with;
-    std::remove_if(tokens.begin(), tokens.end(), boost::bind(starts_with, boost::placeholders::_1, ';'));
+    std::ranges::remove_if(tokens, boost::bind(starts_with, boost::placeholders::_1, ';'));
 
     return tokens;
 }

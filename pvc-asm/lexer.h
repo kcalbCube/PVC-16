@@ -1,7 +1,6 @@
 #pragma once
 #include <variant>
 #include <vector>
-#include <cassert>
 #include "tokenizer.h"
 
 enum class LexemID

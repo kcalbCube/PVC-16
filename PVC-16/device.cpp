@@ -32,7 +32,7 @@ void DebugOutputDevice::process(void)
 {
 	if (auto ch = busRead(BUS_DOUT); ch)
 	{
-		putchar(busRead(BUS_DOUT));
+		putchar(ch);
 		busWrite(BUS_DOUT, 0);
 	}
 }

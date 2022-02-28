@@ -42,8 +42,7 @@ void loadPVCObjFromFile(const std::string& fileName)
 
     for (auto&& c : string_split(syms, ";"))
     {
-        int addr = 0;
-        auto&& ss = string_split(c, ":");
+	    auto&& ss = string_split(c, ":");
 
         auto a16toi = [](const std::string& str) -> int
         {
@@ -53,7 +52,7 @@ void loadPVCObjFromFile(const std::string& fileName)
         };
 
 
-        addr = a16toi(ss[1]);
+        int addr = a16toi(ss[1]);
         if (ss[0] == "START")
         {
             writeRegister(IP, addr);
@@ -71,9 +70,9 @@ void loadDumpFromFile(const std::string& fileName, uint16_t org)
     std::ifstream input(fileName, std::ios::binary);
 
 
-    const size_t size = std::copy(std::istream_iterator<uint8_t>(input), std::istream_iterator<uint8_t>(),
-        mc.data + org) - mc.data;
-    writeRegister(IP, static_cast<uint16_t>(org));
+    (void)std::copy(std::istream_iterator<uint8_t>(input), std::istream_iterator<uint8_t>(),
+        mc.data + org);
+    writeRegister(IP, org);
     input.close();
 }
 
@@ -87,7 +86,7 @@ void start(void)
 
     status.interrupt = 1;
 #ifdef ENABLE_EXECUTION_TIME_CAPTURE
-    auto start = std::chrono::high_resolution_clock::now();
+    const auto start = std::chrono::high_resolution_clock::now();
 #endif
     while (!isHalted)
     {
@@ -95,10 +94,10 @@ void start(void)
         Decoder::process();
     }
 #ifdef ENABLE_EXECUTION_TIME_CAPTURE
-    auto elapsed = std::chrono::high_resolution_clock::now() - start;
-    auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-    std::cout << std::endl << microseconds << " microseconds " << milliseconds << " (ms) elapsed" << std::endl;
+    const auto elapsed = std::chrono::high_resolution_clock::now() - start;
+    const auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+    const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+    std::cout << std::endl << microseconds << " microseconds (" << milliseconds << " ms) elapsed" << std::endl;
 #endif
     registersDump();
 }
@@ -211,14 +210,3 @@ int main(int argc, char** argv)
     }
     return 0;
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file

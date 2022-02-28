@@ -136,7 +136,7 @@ int main(int argc, char** args)
 			const auto r1 = static_cast<RegisterID>(data[i++]);
 			const auto sib = std::bit_cast<SIB>(data[i++]);
 			const auto disp = sib.disp ? read16(i) : 0;
-			i += sib.disp * 2;
+			i += sib.disp ? 2 : 0;
 			printf("%%%s %s\n", registerId2registerName[r1].c_str(), renderIndirectAddress(sib, disp).c_str());
 		}
 		break;
@@ -147,8 +147,8 @@ int main(int argc, char** args)
 			const auto c = read16(i);
 			i += 2;
 			const uint16_t disp = sib.disp ? read16(i) : 0;
-			i += sib.disp * 2;
-			printf("%s %04zX\n", renderIndirectAddress(sib, disp).c_str(), c);
+			i += sib.disp ? 2 : 0;
+			printf("%s %04X\n", renderIndirectAddress(sib, disp).c_str(), c);
 		}
 		break;
 
@@ -157,8 +157,17 @@ int main(int argc, char** args)
 			const auto sib = std::bit_cast<SIB>(data[i++]);
 			const auto c = data[i++];
 			const uint16_t disp = sib.disp ? read16(i) : 0;
-			i += sib.disp * 2;
-			printf("%s %04zX\n", renderIndirectAddress(sib, disp).c_str(), c);
+			i += sib.disp ? 2 : 0;
+			printf("%s %04X\n", renderIndirectAddress(sib, disp).c_str(), c);
+		}
+		break;
+
+		case OPCODE_M:
+		{
+			const auto sib = std::bit_cast<SIB>(data[i++]);
+			const uint16_t disp = sib.disp ? read16(i) : 0;
+			i += sib.disp ? 2 : 0;
+			printf("%s\n", renderIndirectAddress(sib, disp).c_str());
 		}
 		break;
 
@@ -167,7 +176,7 @@ int main(int argc, char** args)
 			const auto sib = std::bit_cast<SIB>(data[i++]);
 			const auto r1 = static_cast<RegisterID>(data[i++]);
 			const uint16_t disp = sib.disp ? read16(i) : 0;
-			i += sib.disp * 2;
+			i += sib.disp ? 2 : 0;
 			printf("%s %%%s\n", renderIndirectAddress(sib, disp).c_str(), registerId2registerName[r1].c_str());
 
 		}
@@ -178,9 +187,9 @@ int main(int argc, char** args)
 			const auto sib1 = std::bit_cast<SIB>(data[i++]);
 			const auto sib2 = std::bit_cast<SIB>(data[i++]);
 			const uint16_t disp1 = sib1.disp ? read16(i) : 0;
-			i += sib1.disp * 2;
+			i += sib1.disp ? 2 : 0;
 			const uint16_t disp2 = sib2.disp ? read16(i) : 0;
-			i += sib2.disp * 2;
+			i += sib2.disp ? 2 : 0;
 			printf("%s %s\n", renderIndirectAddress(sib1, disp1).c_str(), renderIndirectAddress(sib2, disp2).c_str());
 
 		}
@@ -189,7 +198,7 @@ int main(int argc, char** args)
 		case OPCODE_C8:
 		{
 			const auto c8 = data[i++];
-			printf("%02zX\n", (unsigned int)c8);
+			printf("%02X\n", c8);
 		}
 		break;
 
@@ -197,7 +206,7 @@ int main(int argc, char** args)
 		{
 			const auto c = read16(i);
 			i += 2;
-			printf("%04zX\n", (unsigned int)c);
+			printf("%04X\n", c);
 		}
 		break;
 
@@ -207,7 +216,7 @@ int main(int argc, char** args)
 			i += 2;
 			const auto c2 = read16(i);
 			i += 2;
-			printf("%04zX %04zX\n", (unsigned int)c1, (unsigned int)c2);
+			printf("%04X %04X\n", c1, c2);
 		}
 		break;
 
@@ -216,7 +225,7 @@ int main(int argc, char** args)
 			const auto c1 = data[i++];
 			const auto c2 = read16(i);
 			i += 2;
-			printf("%02zX %04zX\n", (unsigned int)c1, (unsigned int)c2);
+			printf("%02X %04X\n", c1, c2);
 		}
 		break;
 

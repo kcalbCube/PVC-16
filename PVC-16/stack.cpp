@@ -6,7 +6,7 @@ void StackController::push(const RegisterID rid)
 	if (is16register(rid))
 		push16(readRegister(rid));
 	else
-		push8(readRegister(rid));
+		push8(static_cast<uint8_t>(readRegister(rid)));
 }
 
 void StackController::push16(const uint16_t src)
@@ -24,14 +24,14 @@ void StackController::push8(const uint8_t src)
 void StackController::pop(const RegisterID rid)
 {
 	auto&& sp = getRegister16(SP);
-	mc.readInRegister(sp, rid);
+	(void)mc.readInRegister(sp, rid);
 	sp += 1 + is16register(rid);
 }
 
 uint16_t StackController::pop16(void)
 {
 	auto&& sp = getRegister16(SP);
-	auto toreturn = mc.read16(sp);
+	const auto toreturn = mc.read16(sp);
 	sp += 2;
 	return toreturn;
 }

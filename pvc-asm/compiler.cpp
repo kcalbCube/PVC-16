@@ -11,14 +11,14 @@ using namespace std::string_literals;
 
 uint16_t* Compiler::findLabel(const std::string& label)
 {
-	if (localSymbols[currentSymbol].count(label))
+	if (localSymbols[currentSymbol].contains(label))
 		return &localSymbols[currentSymbol][label];
-	if (symbols.count(label))
+	if (symbols.contains(label))
 		return &symbols[label];
 	return nullptr;
 }
 
-void Compiler::write(uint8_t data)
+void Compiler::write(const uint8_t data)
 {
 	if (this->data.size() <= ip)
 		this->data.resize(ip+1);
@@ -76,7 +76,7 @@ inline void Compiler::writeDisp(const IndirectAddress& ia)
 	std::visit(visit_overload{
 		[&](const Constant constant) -> void
 			{
-				write16((uint16_t)constant.constant);
+				write16(static_cast<uint16_t>(constant.constant));
 			},
 		[&](const LabelUse& lu) -> void
 			{
@@ -119,9 +119,9 @@ void Compiler::subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint1
 				break;
 			case MI_CONSTANT:
 				if(args & (1 << i))
-					write((uint8_t)std::get<Constant>(c).constant);
+					write(static_cast<uint8_t>(std::get<Constant>(c).constant));
 				else
-					write16((uint16_t)std::get<Constant>(c).constant);
+					write16(static_cast<uint16_t>(std::get<Constant>(c).constant));
 				break;
 			case MI_LABELUSE:
 				writeLabel(std::get<LabelUse>(c).label);
@@ -515,8 +515,8 @@ void Compiler::compile(std::vector<SyntaxUnit>& syntax)
 
 void Compiler::writeInOstream(std::ostream& output)
 {
-	for (auto&& symbol : delayedSymbols)
-		warning(std::string("undeclared symbol \"") + symbol.first + "\".");
+	for (const auto& key : delayedSymbols | std::views::keys)
+		warning(std::string("undeclared symbol \"") + key + "\".");
 
 	char buffer[128];
 	std::string syms;
