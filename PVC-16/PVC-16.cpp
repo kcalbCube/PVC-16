@@ -80,6 +80,7 @@ void start(void)
 {
     DeviceController dc;
     ::dc = &dc;
+
     dc.addDevice(new DebugOutputDevice);
     dc.addDevice(new VideoController);
     dc.start();

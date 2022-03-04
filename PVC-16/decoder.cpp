@@ -88,12 +88,12 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16(static_cast<unsigned>(r) / readRegister(r2));
+			r = updateStatus16(static_cast<unsigned>(r) / r2v);
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8(static_cast<unsigned>(r) / readRegister(r2));
+			r = updateStatus8(static_cast<unsigned>(r) / r2v);
 		}
 		break;
 	}
@@ -109,12 +109,12 @@ void Decoder::processRR(Opcode opcode, RegisterID r1, RegisterID r2)
 		if (is16register(r1))
 		{
 			auto&& r = getRegister16(r1);
-			r = updateStatus16(static_cast<unsigned>(r) % readRegister(r2));
+			r = updateStatus16(static_cast<unsigned>(r) % r2v);
 		}
 		else
 		{
 			auto&& r = getRegister8(r1);
-			r = updateStatus8(static_cast<unsigned>(r) % readRegister(r2));
+			r = updateStatus8(static_cast<unsigned>(r) % r2v);
 		}
 		break;
 	}
@@ -520,8 +520,30 @@ void Decoder::processC(Opcode opcode, uint16_t constant)
 				writeRegister(IP, constant);
 		}
 		break;
-
-
+		case JB:
+		{
+			if (status.overflow)
+				writeRegister(IP, constant);
+		}
+		break;
+		case JBZ:
+		{
+			if (status.overflow || status.zero)
+				writeRegister(IP, constant);
+		}
+		break;
+		case JNB:
+		{
+			if (!status.overflow)
+				writeRegister(IP, constant);
+		}
+		break;
+		case JA:
+		{
+			if (!status.sign && !status.overflow)
+				writeRegister(IP, constant);
+		}
+		break;
 		case CALL:
 		{
 			auto& ip = getRegister16(IP);
@@ -674,8 +696,8 @@ void Decoder::processMCC8(Opcode opcode, uint16_t addr, uint16_t c1, uint8_t c2)
 
 void Decoder::process(void)
 {
-	auto&& ip = getRegister16(IP); 
-	auto opcode = static_cast<Opcode>(mc.read8(ip++));
+	auto&& ip = getRegister16(IP);
+	const auto opcode = static_cast<Opcode>(mc.read8(ip++));
 	
 #ifdef ENABLE_WORKFLOW
 	if (vmflags.workflowEnabled)
@@ -797,7 +819,7 @@ void Decoder::process(void)
 		const uint16_t disp2 = sib2.disp ? mc.read16(ip) : 0;
 		ip += sib2.disp ? 2 : 0;
 		const uint16_t addr1 = readAddress(sib1, disp1);
-		const uint16_t addr2 = readAddress(sib1, disp1);
+		const uint16_t addr2 = readAddress(sib2, disp2);
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
 			printf("%s{%04X} %s{%04X}\n", renderIndirectAddress(sib1, disp1).c_str(), addr1, renderIndirectAddress(sib2, disp2).c_str(), addr2);
