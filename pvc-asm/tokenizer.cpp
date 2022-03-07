@@ -9,9 +9,10 @@ using namespace std::literals;
 
 std::vector<Token> Tokenizer::coreTokenize(std::string src)
 {
-	const boost::escaped_list_separator<char> els("\\"s, " \n\t"s, "\";");
+	const boost::escaped_list_separator<char> els("\\"s, " \n\t"s, "\"';");
 
-    boost::replace_all(src, "\"", "\"\\\"");
+    boost::replace_all(src, "\"", R"("\")");
+    boost::replace_all(src, "'", "'\\'");
     boost::replace_all(src, ";", ";\\;");
     boost::replace_all(src, "\\n", "\\\\n");
     boost::replace_all(src, "\n", "\\n");
@@ -21,7 +22,7 @@ std::vector<Token> Tokenizer::coreTokenize(std::string src)
 
     std::ranges::copy(tok, std::back_inserter(tokens));
     bool (std::string::*starts_with) (char const) const = &std::string::starts_with;
-    std::ranges::remove_if(tokens, boost::bind(starts_with, boost::placeholders::_1, ';'));
+    (void)std::remove_if(tokens.begin(), tokens.end(), boost::bind(starts_with, boost::placeholders::_1, ';'));
 
     return tokens;
 }
@@ -73,7 +74,8 @@ std::vector<Token> Tokenizer::tokenize(const std::string& src)
     auto tokens = coreTokenize(src);
     operatorTokenize(tokens, tokens);
     for (auto&& c : tokens)
-        if (c.find('"') == std::string::npos)
+        if (c.find('"') == std::string::npos && c.find('\'') == std::string::npos)
             std::ranges::transform(c, c.begin(), [](char c) -> char { return std::toupper(c); });
+
 	return tokens;
 }

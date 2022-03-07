@@ -29,7 +29,7 @@ class VideoController : public Device
 	uint8_t modeSet = 0;
 
 public:
-	~VideoController(void);
+	~VideoController(void) override;
 	void process(void) override;
 
 	// should be called from same thread as process()

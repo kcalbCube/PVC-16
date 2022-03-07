@@ -87,18 +87,21 @@ void start(void)
 
     status.interrupt = 1;
 #ifdef ENABLE_EXECUTION_TIME_CAPTURE
+    unsigned long long ops = 0;
     const auto start = std::chrono::high_resolution_clock::now();
 #endif
     while (!isHalted)
     {
         handleDelayedInterrupts();
         Decoder::process();
+        ++ops;
     }
 #ifdef ENABLE_EXECUTION_TIME_CAPTURE
     const auto elapsed = std::chrono::high_resolution_clock::now() - start;
     const auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
     const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-    std::cout << std::endl << microseconds << " microseconds (" << milliseconds << " ms) elapsed" << std::endl;
+    std::cout << std::endl << microseconds << " microseconds (" << milliseconds << " ms) elapsed, " << ops << " executed (" << 
+        ((static_cast<long double>(ops) / (static_cast<long double>(microseconds) / 1e6)) / 1e6) << " MHz )" << std::endl;
 #endif
     registersDump();
 }

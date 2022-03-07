@@ -11,7 +11,6 @@ instructions
 	add
 		add  reg    reg
 		add  reg    imm16
-
 	sub
 		sub  reg    reg
 		sub  reg    imm16
@@ -33,13 +32,19 @@ instructions
 		cmp  reg    imm8
 		cmp  reg    reg 
 	jumps
-		jmp  imm16	
-		jz	 imm16
-		jnz  imm16
-		jg	 imm16          signed
-		jng	 imm16          signed
-		jgz  imm16          signed
-		jl	 imm16          signed
+		jmp  		 	  imm16	
+		jz |je		 	  imm16				 	 Z 			 => x == y
+		jnz|jne 	 	  imm16				    !Z 			 => x != y
+		jg |jnle|jnlz 	  imm16          signed !Z && S == O => x >  y
+		jng|jle |jlz  	  imm16          signed  Z || S != O => x <= y
+		jgz|jnl |jge  	  imm16          signed  S == O 	 => x >= y
+		jl |jngz|jnge 	  imm16          signed	 S != O 	 => x <  y
+		jb |jnae|jnaz|jc  imm16		   unsigned	 O 			 => x <  y 
+		jbe|jbz |jna	  imm16        unsigned	 O || Z		 => x <= y
+		jnb|jae |jaz |jnc imm16        unsigned	!O 			 => x >= y
+		ja |jnbe|jnbz	  imm16		   unsigned	!S && !O 	 => x >  y
+		call			  imm16
+		
 	push
 		push reg
 		push imm16
@@ -66,8 +71,6 @@ instructions
 		neg	 reg
 	ret
 		ret
-	call
-		call imm16
 	memset
 		memset [addr] imm16 imm8
 	cli
@@ -119,7 +122,7 @@ indirect address
 
 interrupts
 	interrupt - 0h-FFh imm8
-	int x == call interrupttable[x*2]
+	int x = call interrupttable[x*2]
 	interrupttable are placed in 0h address
 	
 	Interrupt flag blocks generating interrupts if zero, boths from devices and int opcode.

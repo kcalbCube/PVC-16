@@ -403,12 +403,12 @@ void Decoder::processR(Opcode opcode, RegisterID r1)
 	}
 	case POPA:
 	{
-		StackController::push(SI);
-		StackController::push(E);
-		StackController::push(D);
-		StackController::push(C);
-		StackController::push(B);
-		StackController::push(A);
+		StackController::pop(SI);
+		StackController::pop(E);
+		StackController::pop(D);
+		StackController::pop(C);
+		StackController::pop(B);
+		StackController::pop(A);
 		break;
 	}
 	default:
@@ -883,8 +883,7 @@ void Decoder::process(void)
 	case OPCODE_MCC8:
 	{
 		const auto sib = std::bit_cast<SIB>(mc.read8(ip++));
-		const uint16_t c1 = mc.read16(ip);
-		ip += 2;
+		const uint16_t c1 = mc.read16(ip); ip += 2;
 		const uint8_t c2 = mc.read8(ip++);
 		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
 		ip += sib.disp ? 2 : 0;
