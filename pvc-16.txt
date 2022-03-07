@@ -115,9 +115,10 @@ registers
 		IP
 	
 indirect address
-	indirect address = [base reg + index reg + disp imm16]
+	indirect address = [base reg * scale + index reg + disp imm16]
 	base reg = BP or SP
 	index reg = common register, no fraction
+	scale = 0 | 2 | 4 | 8
 	At least one element should be present
 
 interrupts
