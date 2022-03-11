@@ -121,7 +121,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -184,7 +184,6 @@
     <ClInclude Include="map.h" />
     <ClInclude Include="memory.h" />
     <ClInclude Include="mutility.h" />
-    <ClInclude Include="narg.h" />
     <ClInclude Include="opcode.h" />
     <ClInclude Include="registers.h" />
     <ClInclude Include="registers_define.h" />

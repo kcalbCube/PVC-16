@@ -56,9 +56,6 @@
     <ClInclude Include="map.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="narg.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="decoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>

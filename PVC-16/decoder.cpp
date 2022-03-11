@@ -13,7 +13,7 @@
 
 uint16_t Decoder::readAddress(SIB sib, const uint16_t disp)
 {
-	return static_cast<uint16_t>((sib.index ? readRegister(sib.getIndex()) : 0) * (1 << sib.scale) +
+	return static_cast<uint16_t>(readRegister(sib.getIndex()) * (1 << sib.scale) +
 		readRegister(sib.getBase()) + disp);
 }
 
@@ -810,6 +810,21 @@ void Decoder::process(void)
 	}
 	break;
 
+	case OPCODE_M:
+	{
+		const auto sib = std::bit_cast<SIB>(mc.read8(ip++));
+		const uint16_t disp = sib.disp ? mc.read16(ip) : 0;
+		const uint16_t addr = readAddress(sib, disp);
+		ip += sib.disp ? 2 : 0;
+#ifdef ENABLE_WORKFLOW
+		if (vmflags.workflowEnabled)
+			printf("%s{%04X}\n", renderIndirectAddress(sib, disp).c_str(), addr);
+#endif
+		processM(opcode, addr);
+
+	}
+	break;
+
 	case OPCODE_MM:
 	{
 		const auto sib1 = std::bit_cast<SIB>(mc.read8(ip++));
@@ -855,9 +870,8 @@ void Decoder::process(void)
 	case OPCODE_CC:
 	{
 		const auto c1 = mc.read16(ip);
-		ip += 2;
-		const auto c2 = mc.read16(ip);
-		ip += 2;
+		const auto c2 = mc.read16(ip + 2);
+		ip += 4;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
 			printf("%04X %04X\n", c1, c2);
