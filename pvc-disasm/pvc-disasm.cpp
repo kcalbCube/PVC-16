@@ -109,35 +109,35 @@ int main(int argc, char** args)
 		{
 		case OPCODE_RR:
 		{
-			const auto r1 = static_cast<RegisterID>(data[i++]);
-			const auto r2 = static_cast<RegisterID>(data[i++]);
-			printf("%%%s %%%s\n", registerId2registerName[r1].c_str(), registerId2registerName[r2].c_str());
+			const auto r1 = static_cast<registers::RegisterID>(data[i++]);
+			const auto r2 = static_cast<registers::RegisterID>(data[i++]);
+			printf("%%%s %%%s\n", registers::registerId2registerName[r1].c_str(), registers::registerId2registerName[r2].c_str());
 		}
 		break;
 
 		case OPCODE_RC:
 		{
-			const auto r1 = static_cast<RegisterID>(data[i++]);
+			const auto r1 = static_cast<registers::RegisterID>(data[i++]);
 			const auto c = read16(i);
 			i += 2;
-			printf("%%%s %04zX\n", registerId2registerName[r1].c_str(), (unsigned int)c);
+			printf("%%%s %04zX\n", registers::registerId2registerName[r1].c_str(), (unsigned int)c);
 		}
 		break;
 
 		case OPCODE_R:
 		{
-			const auto r1 = static_cast<RegisterID>(data[i++]);
-			printf("%%%s\n", registerId2registerName[r1].c_str());
+			const auto r1 = static_cast<registers::RegisterID>(data[i++]);
+			printf("%%%s\n", registers::registerId2registerName[r1].c_str());
 		}
 		break;
 
 		case OPCODE_RM:
 		{
-			const auto r1 = static_cast<RegisterID>(data[i++]);
+			const auto r1 = static_cast<registers::RegisterID>(data[i++]);
 			const auto sib = std::bit_cast<SIB>(data[i++]);
 			const auto disp = sib.disp ? read16(i) : 0;
 			i += sib.disp ? 2 : 0;
-			printf("%%%s %s\n", registerId2registerName[r1].c_str(), renderIndirectAddress(sib, disp).c_str());
+			printf("%%%s %s\n", registers::registerId2registerName[r1].c_str(), renderIndirectAddress(sib, disp).c_str());
 		}
 		break;
 
@@ -174,10 +174,10 @@ int main(int argc, char** args)
 		case OPCODE_MR:
 		{
 			const auto sib = std::bit_cast<SIB>(data[i++]);
-			const auto r1 = static_cast<RegisterID>(data[i++]);
+			const auto r1 = static_cast<registers::RegisterID>(data[i++]);
 			const uint16_t disp = sib.disp ? read16(i) : 0;
 			i += sib.disp ? 2 : 0;
-			printf("%s %%%s\n", renderIndirectAddress(sib, disp).c_str(), registerId2registerName[r1].c_str());
+			printf("%s %%%s\n", renderIndirectAddress(sib, disp).c_str(), registers::registerId2registerName[r1].c_str());
 
 		}
 		break;

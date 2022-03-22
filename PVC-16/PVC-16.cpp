@@ -55,7 +55,7 @@ void loadPVCObjFromFile(const std::string& fileName)
         int addr = a16toi(ss[1]);
         if (ss[0] == "START")
         {
-            writeRegister(IP, addr);
+            write(registers::IP, addr);
             break;
         }
     }
@@ -72,7 +72,7 @@ void loadDumpFromFile(const std::string& fileName, uint16_t org)
 
     (void)std::copy(std::istream_iterator<uint8_t>(input), std::istream_iterator<uint8_t>(),
         mc.data + org);
-    writeRegister(IP, org);
+    write(registers::IP, org);
     input.close();
 }
 
@@ -85,14 +85,14 @@ void start(void)
     dc.addDevice(new VideoController);
     dc.start();
 
-    status.interrupt = 1;
+    registers::status.interrupt = 1;
 #ifdef ENABLE_EXECUTION_TIME_CAPTURE
     unsigned long long ops = 0;
     const auto start = std::chrono::high_resolution_clock::now();
 #endif
-    while (!isHalted)
+    while (!interrupts::isHalted)
     {
-        handleDelayedInterrupts();
+	    interrupts::handleDelayedInterrupts();
         Decoder::process();
         ++ops;
     }

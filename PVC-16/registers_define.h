@@ -8,28 +8,32 @@
 #define REGISTERS_LIST A, B, C, D, E, SI, BP, SP, IP
 #define LREGISTERS_LIST AH, AL, BH, BL, CH, CL, DH, DL, EH, EL, SIH, SIL, BPH, BPL, SPH, SPL, IPH, IPL
 
-enum RegisterID : unsigned
+namespace registers
 {
-	REGISTERS_LIST,
-	LREGISTERS_LIST,
-	NO_REG
-};
+	enum RegisterID : unsigned
+	{
+		REGISTERS_LIST,
+		LREGISTERS_LIST,
+		NO_REG
+	};
 
-inline bool is16register(const RegisterID id)
-{
-	return id < AH;
-}
-
-const static std::string registerId2registerName[] = {
+	inline bool is16register(const RegisterID id)
+	{
+		return id < AH;
+	}
 #define _MAP(x) #x
-	MAP_LIST(_MAP, REGISTERS_LIST),
-	MAP_LIST(_MAP, LREGISTERS_LIST)
-};
+	const static std::string registerId2registerName[] = 
+	{
+		MAP_LIST(_MAP, REGISTERS_LIST),
+		MAP_LIST(_MAP, LREGISTERS_LIST)
+	};
 #undef _MAP
 
-const static std::map<std::string, RegisterID> registerName2registerId = {
 #define _MAP(x) {#x, x}
-	MAP_LIST(_MAP, REGISTERS_LIST),
-	MAP_LIST(_MAP, LREGISTERS_LIST)
-};
+	const static std::map<std::string, RegisterID> registerName2registerId = 
+	{
+		MAP_LIST(_MAP, REGISTERS_LIST),
+		MAP_LIST(_MAP, LREGISTERS_LIST)
+	};
 #undef _MAP
+}

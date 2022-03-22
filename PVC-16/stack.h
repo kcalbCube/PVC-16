@@ -1,13 +1,13 @@
 #pragma once
-#include "registers.h"
-
-class StackController
+#include "registers_define.h"
+namespace stack
 {
-public:
-	static void push(const RegisterID rid);
-	static void push16(const uint16_t src);
-	static void push8(const uint8_t src);
-	static void pop(const RegisterID rid);
-	static uint16_t pop16(void);
-	static uint8_t pop8(void);
-};
+	void pushf(void);
+	void popf(void);
+	void push(const registers::RegisterID);
+	void push16(const uint16_t);
+	void push8(const uint8_t);
+	void pop(const registers::RegisterID);
+	uint16_t pop16(void);
+	uint8_t pop8(void);
+}

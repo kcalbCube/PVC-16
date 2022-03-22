@@ -20,13 +20,13 @@ inline std::string renderIndirectAddress(const SIB sib, const uint16_t disp)
 	}
 	if (sib.base)
 	{
-		sprintf_s(buffer, opRequired ? "+ %%%s " : "%%%s ", registerId2registerName[sib.getBase()].c_str());
+		sprintf_s(buffer, opRequired ? "+ %%%s " : "%%%s ", registers::registerId2registerName[sib.getBase()].c_str());
 		str += buffer;
 		opRequired = true;
 	}
 	if (sib.index)
 	{
-		sprintf_s(buffer, opRequired ? "+ %%%s " : "%%%s ", registerId2registerName[sib.getIndex()].c_str());
+		sprintf_s(buffer, opRequired ? "+ %%%s " : "%%%s ", registers::registerId2registerName[sib.getIndex()].c_str());
 		str += buffer;
 		opRequired = true;
 	}

@@ -57,8 +57,8 @@ void Compiler::writeLabel(const std::string& label)
 
 SIB Compiler::generateSIB(const IndirectAddress& ia)
 {
-	return SIB(ia.scale, ia.index.name.empty() ? NO_REG : registerName2registerId.at(ia.index.name),
-		ia.base.name.empty() ? NO_REG : registerName2registerId.at(ia.base.name), isDispPresent(ia));
+	return SIB(ia.scale, ia.index.name.empty() ? registers::NO_REG : registers::registerName2registerId.at(ia.index.name),
+		ia.base.name.empty() ? registers::NO_REG : registers::registerName2registerId.at(ia.base.name), isDispPresent(ia));
 }
 
 void Compiler::writeSIB(const Mnemonic& mnemonic, const IndirectAddress& ia)
@@ -115,7 +115,7 @@ void Compiler::subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint1
 			switch (c.index())
 			{
 			case MI_REGISTER:
-				write(registerName2registerId.at(std::get<Register>(c).name));
+				write(registers::registerName2registerId.at(std::get<Register>(c).name));
 				break;
 			case MI_CONSTANT:
 				if(args & (1 << i))
@@ -400,10 +400,16 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 		{constructDescription(INDIRECT_ADDRESS, CONSTANT), IN_M16}
 		});
 	}
-	else if (mnemonic.name == "RET")
+	else if (mnemonic.name == "RET" || mnemonic.name == "RES")
 	{
 		subcompileMnemonic(mnemonic, {
 				{constructDescription(), RET}
+			});
+	}
+	else if (mnemonic.name == "IRET" || mnemonic.name == "REI")
+	{
+		subcompileMnemonic(mnemonic, {
+				{constructDescription(), REI}
 			});
 	}
 	else if (mnemonic.name == "PUSHA")
@@ -413,6 +419,18 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 		});
 	}
 	else if (mnemonic.name == "POPA")
+	{
+	subcompileMnemonic(mnemonic, {
+			{constructDescription(), POPA}
+		});
+	}
+	else if (mnemonic.name == "PUSHF")
+	{
+	subcompileMnemonic(mnemonic, {
+			{constructDescription(), PUSHA}
+		});
+	}
+	else if (mnemonic.name == "POPF")
 	{
 	subcompileMnemonic(mnemonic, {
 			{constructDescription(), POPA}

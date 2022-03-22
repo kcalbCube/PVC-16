@@ -58,7 +58,7 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 						switch (op[0].id)
 						{
 					case LexemID::REGISTER:
-							if (SIB::isBase(registerName2registerId.at(std::get<std::string>(op[0].lexemas))))
+							if (SIB::isBase(registers::registerName2registerId.at(std::get<std::string>(op[0].lexemas))))
 								mnemonic.mnemonics.emplace_back(IndirectAddress{
 									.base = Register(std::get<std::string>(op[0].lexemas))
 									});
@@ -91,7 +91,7 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 							switch (op[2].id)
 							{
 							case LexemID::REGISTER:
-								if (SIB::isBase(registerName2registerId.at(std::get<std::string>(op[0].lexemas))))
+								if (SIB::isBase(registers::registerName2registerId.at(std::get<std::string>(op[0].lexemas))))
 									mnemonic.mnemonics.emplace_back(IndirectAddress{
 										.base = Register(std::get<std::string>(op[0].lexemas)),
 										.index = Register(std::get<std::string>(op[2].lexemas))
@@ -103,7 +103,7 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 										});
 								break;
 							case LexemID::NUMBER:
-								if (SIB::isBase(registerName2registerId.at(std::get<std::string>(op[0].lexemas))))
+								if (SIB::isBase(registers::registerName2registerId.at(std::get<std::string>(op[0].lexemas))))
 									mnemonic.mnemonics.emplace_back(IndirectAddress{
 										.base = Register(std::get<std::string>(op[0].lexemas)),
 										.disp = Constant(std::get<unsigned>(op[2].lexemas))
@@ -115,7 +115,7 @@ std::vector<SyntaxUnit> Syntaxer::syntaxParse(std::vector<Lexema>& lexems)
 										});
 								break;
 							case LexemID::LABEL_USE:
-								if (SIB::isBase(registerName2registerId.at(std::get<std::string>(op[0].lexemas))))
+								if (SIB::isBase(registers::registerName2registerId.at(std::get<std::string>(op[0].lexemas))))
 									mnemonic.mnemonics.emplace_back(IndirectAddress{
 										.base = Register(std::get<std::string>(op[0].lexemas)),
 										.disp = LabelUse(std::get<std::string>(op[2].lexemas))

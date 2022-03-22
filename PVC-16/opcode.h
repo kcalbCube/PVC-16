@@ -105,6 +105,9 @@ enum Opcode
 	MOD_RR,
 	MOD_RC,
 
+	REI,
+	PUSHF,
+	POPF,
 
 	BRK = 0xCC,
 };
@@ -185,8 +188,11 @@ inline OpcodeFormat getOpcodeFormat(const Opcode opcode)
 		OPCODEFORMAT_CASE(IN_M8, OPCODE_MC);
 		OPCODEFORMAT_CASE(IN_M16, OPCODE_MC);
 		OPCODEFORMAT_CASE(RET, OPCODE);
+		OPCODEFORMAT_CASE(REI, OPCODE);
 		OPCODEFORMAT_CASE(CLI, OPCODE);
 		OPCODEFORMAT_CASE(STI, OPCODE);
+		OPCODEFORMAT_CASE(PUSHF, OPCODE);
+		OPCODEFORMAT_CASE(POPF, OPCODE);
 		OPCODEFORMAT_CASE(POPA, OPCODE);
 		OPCODEFORMAT_CASE(PUSHA, OPCODE);
 		OPCODEFORMAT_CASE(NEG, OPCODE_R);
@@ -218,22 +224,23 @@ struct SIB
 	uint8_t base  : 2; // 01 - BP, 02 - SP, 03 - reserved
 	uint8_t disp  : 1; // 0 - no displacement, 1 - displacement present.
 
-	SIB(const uint8_t scale, const RegisterID index, const RegisterID base, const uint8_t disp) : scale(static_cast<uint8_t>(log2(scale)))
+	SIB(const uint8_t scale, const registers::RegisterID index, const registers::RegisterID base, const uint8_t disp) :
+		scale(static_cast<uint8_t>(log2(scale)))
 	{
-		if (is16register(index) || index == NO_REG)
-			this->index = index == NO_REG ? 0 : (index + 1);
+		if (is16register(index) || index == registers::NO_REG)
+			this->index = index == registers::NO_REG ? 0 : (index + 1);
 		else
-			this->index = (index - AL) / 2;
+			this->index = (index - registers::AL) / 2;
 
 		switch (base)
 		{
-		case BP:
+		case registers::BP:
 			this->base = 1;
 			break;
-		case SP:
+		case registers::SP:
 			this->base = 2;
 			break;
-		case NO_REG:
+		case registers::NO_REG:
 			this->base = 0;
 			break;
 		default: UNREACHABLE;
@@ -242,25 +249,25 @@ struct SIB
 	}
 	SIB(void) = default;
 
-	static bool isBase(const RegisterID id)
+	static bool isBase(const registers::RegisterID id)
 	{
-		return id == BP || id == SP;
+		return id == registers::BP || id == registers::SP;
 	}
 
-	static bool isIndex(const RegisterID id)
+	static bool isIndex(const registers::RegisterID id)
 	{
-		return id < BP;
+		return id < registers::BP;
 	}
 
-	[[nodiscard]] RegisterID getBase(void) const
+	[[nodiscard]] registers::RegisterID getBase(void) const
 	{
-		constexpr RegisterID table[] = { BP, SP };
-		return base ? table[base - 1] : NO_REG;
+		constexpr registers::RegisterID table[] = { registers::BP, registers::SP };
+		return base ? table[base - 1] : registers::NO_REG;
 	}
 
-	[[nodiscard]] RegisterID getIndex(void) const
+	[[nodiscard]] registers::RegisterID getIndex(void) const
 	{
-		return static_cast<RegisterID>(index - 1);
+		return static_cast<registers::RegisterID>(index - 1);
 	}
 };
 #pragma pack(pop)

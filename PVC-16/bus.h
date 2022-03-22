@@ -1,5 +1,6 @@
 #pragma once
-#include <stdint.h>
+#include <cstdint>
+// TODO: move to bus namespace
 constexpr size_t busSize = 0xFF + 1;
 inline uint8_t bus[busSize]{};
 

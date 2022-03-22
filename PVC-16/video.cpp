@@ -16,7 +16,7 @@ void VideoController::process(void)
 		return;
 	tick = 0;
 
-	auto mode = busRead(VIDEOCONTROLLER_MODE);
+	const auto mode = busRead(VIDEOCONTROLLER_MODE);
 	if (!mode || mode != modeSet)
 		return;
 
@@ -41,7 +41,7 @@ void VideoController::process(void)
 		SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 		SDL_RenderDrawPoints(renderer, points, i);
 
-		addDelayedInterrupt(VBI);
+		delayedInterrupt(interrupts::VBI);
 	}
 	break;
 	default:

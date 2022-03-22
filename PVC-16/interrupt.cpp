@@ -1,55 +1,58 @@
 ﻿#include "interrupt.h"
 #include "device.h"
-#include <iostream>
 #include "stack.h"
 
-void interrupt(const uint8_t interrupt)
+namespace interrupts
 {
-	if (!status.interrupt)
-		return;
-
-	switch(interrupt)
+	void interrupt(const uint8_t interrupt)
 	{
-	case HALT:
-		isHalted = true;
-		break;
+		if (!registers::status.interrupt)
+			return;
 
-	case VIDEOCONTROLLER:
-		switch (readRegister(AL))
+		switch (interrupt)
 		{
-		case 1:
-			dc->operations.push_back(Operation::VIDEOCONTROLLER_SET_MODE);
+		case HALT:
+			isHalted = true;
 			break;
+
+		case VIDEOCONTROLLER:
+			switch (read(registers::AL))
+			{
+			case 1:
+				dc->operations.push_back(Operation::VIDEOCONTROLLER_SET_MODE);
+				break;
+			}
+			break;
+
+		default:
+		{
+			const auto addr = mc.read16(interrupt * 2);
+			if (!addr)
+				break;
+			stack::push(registers::IP);
+			stack::pushf();
+			write(registers::IP, addr);
 		}
 		break;
-
-	default:
-	{
-		auto addr = mc.read16(interrupt * 2);
-		if (!addr)
-			break;
-		StackController::push(IP);
-		writeRegister(IP, addr);
+		}
 	}
-		break;
-	}
-}
 
-std::deque<uint8_t> delayedInterrupts;
+	std::deque<uint8_t> delayedInterrupts;
 
-void addDelayedInterrupt(uint8_t interrupt)
-{
-	if(status.interrupt)
-		delayedInterrupts.push_back(interrupt);
-}
-
-void handleDelayedInterrupts(void)
-{
-	if (!status.interrupt)
-		delayedInterrupts.clear();
-	else if (!delayedInterrupts.empty())
+	void delayedInterrupt(uint8_t interrupt)
 	{
-		interrupt(delayedInterrupts[0]);
-		delayedInterrupts.pop_front();
+		if (registers::status.interrupt)
+			delayedInterrupts.push_back(interrupt);
+	}
+
+	void handleDelayedInterrupts(void)
+	{
+		if (!registers::status.interrupt)
+			delayedInterrupts.clear();
+		else if (!delayedInterrupts.empty())
+		{
+			interrupt(delayedInterrupts[0]);
+			delayedInterrupts.pop_front();
+		}
 	}
 }

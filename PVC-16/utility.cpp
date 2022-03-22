@@ -48,6 +48,6 @@ void hexDump(const char* desc, void* addr, const size_t len, const size_t offset
 
 void registersDump(void)
 {
-	for(auto&& c : {REGISTERS_LIST})
-		printf("%4s  %04X\n", registerId2registerName[c].c_str(), readRegister(c));
+	for(registers::RegisterID c = registers::A; c < registers::AH; ++(int&)c)
+		printf("%4s  %04X\n", registers::registerId2registerName[c].c_str(), registers::read(c));
 }
