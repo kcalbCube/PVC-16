@@ -3,6 +3,7 @@
 #include <ostream>
 #include <deque>
 #include <fstream>
+#include <variant>
 
 #include "../PVC-16/opcode.h"
 #include "../PVC-16/registers_define.h"
@@ -71,7 +72,7 @@ bool Compiler::isDispPresent(const IndirectAddress& ia)
 	return ia.disp.index() || std::get<Constant>(ia.disp).constant;
 }
 
-inline void Compiler::writeDisp(const IndirectAddress& ia)
+void Compiler::writeDisp(const IndirectAddress& ia)
 {
 	std::visit(visit_overload{
 		[&](const Constant constant) -> void
@@ -171,6 +172,7 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 			{constructDescription(INDIRECT_ADDRESS, REGISTER), MOV_MR},
 			{constructDescription(INDIRECT_ADDRESS, INDIRECT_ADDRESS), MOV_MM16},
 			{constructDescription(INDIRECT_ADDRESS, CONSTANT), MOV_MC16},
+			{constructDescription(INDIRECT_ADDRESS, LABEL), MOV_MC16},
 			});
 	}
 	else if (mnemonic.name == "MOVB")
@@ -247,7 +249,8 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 	else if (mnemonic.name == "LEA")
 	{
 		subcompileMnemonic(mnemonic, {
-		{constructDescription(REGISTER, INDIRECT_ADDRESS), LEA},
+		{constructDescription(REGISTER, INDIRECT_ADDRESS), LEA_RM},
+		{constructDescription(INDIRECT_ADDRESS, INDIRECT_ADDRESS), LEA_MM}
 			});
 	}
 	else if(mnemonic.name == "INC")
@@ -427,13 +430,13 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 	else if (mnemonic.name == "PUSHF")
 	{
 	subcompileMnemonic(mnemonic, {
-			{constructDescription(), PUSHA}
+			{constructDescription(), PUSHF}
 		});
 	}
 	else if (mnemonic.name == "POPF")
 	{
 	subcompileMnemonic(mnemonic, {
-			{constructDescription(), POPA}
+			{constructDescription(), POPF}
 		});
 	}
 	else if (mnemonic.name == "CLI")
@@ -576,10 +579,10 @@ void Compiler::writeInOstream(std::ostream& output)
 	std::string syms;
 	for (auto&& [label, address] : symbols)
 	{
-		sprintf_s(buffer, "%s:%04X;", label.c_str(), address);
+		sprintf(buffer, "%s:%04X;", label.c_str(), address);
 		syms += buffer;
 	}
-	sprintf_s(buffer, "%04zX", syms.size());
+	sprintf(buffer, "%04zX", syms.size());
 	output << buffer << syms;
 	std::ranges::copy(data, std::ostream_iterator<char>(output));
 }

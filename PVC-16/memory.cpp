@@ -1,4 +1,5 @@
 #include "memory.h"
+#include <bit>
 
 void MemoryController::fill(const uint8_t tofill)
 {
@@ -41,9 +42,4 @@ void MemoryController::writeFromRegister(const addr_t addr, const registers::Reg
 	is16register(reg) ?
 		write16(addr, read(reg))
 	:	write8(addr, static_cast<uint8_t>(read(reg)));
-}
-
-void MemoryController::write(const addr_t org, const std::vector<uint8_t>& dat)
-{
-	std::ranges::copy(dat, data + org);
 }

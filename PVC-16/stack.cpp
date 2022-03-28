@@ -30,7 +30,7 @@ namespace stack
 
 	void push8(const uint8_t src)
 	{
-		mc.write16(--get16(registers::SP), src);
+		mc.write8(--get16(registers::SP), src);
 	}
 
 	void pop(const registers::RegisterID rid)

@@ -19,7 +19,7 @@ namespace interrupts
 			switch (read(registers::AL))
 			{
 			case 1:
-				dc->operations.push_back(Operation::VIDEOCONTROLLER_SET_MODE);
+				DeviceController::addOperation(Operation::VIDEOCONTROLLER_SET_MODE);
 				break;
 			}
 			break;

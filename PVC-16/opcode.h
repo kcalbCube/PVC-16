@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-
+#include <cmath>
 #include "mutility.h"
 #include "registers_define.h"
 
@@ -30,7 +30,8 @@ enum Opcode
 	MUL_C16,
 	DIV_C16,
 
-	LEA,
+	LEA_RM,
+	LEA_MM,
 
 	INC,
 	DEC,
@@ -154,7 +155,8 @@ inline OpcodeFormat getOpcodeFormat(const Opcode opcode)
 		OPCODEFORMAT_CASE(DIV, OPCODE_RR);
 		OPCODEFORMAT_CASE(MUL_C16, OPCODE_RC);
 		OPCODEFORMAT_CASE(DIV_C16, OPCODE_RC);
-		OPCODEFORMAT_CASE(LEA, OPCODE_RM);
+		OPCODEFORMAT_CASE(LEA_RM, OPCODE_RM);
+		OPCODEFORMAT_CASE(LEA_MM, OPCODE_MM);
 		OPCODEFORMAT_CASE(INC, OPCODE_R);
 		OPCODEFORMAT_CASE(DEC, OPCODE_R);
 		OPCODEFORMAT_CASE(INT, OPCODE_C8);
@@ -209,6 +211,7 @@ inline OpcodeFormat getOpcodeFormat(const Opcode opcode)
 		OPCODEFORMAT_CASE(AND_RR, OPCODE_RR);
 		OPCODEFORMAT_CASE(XOR_RR, OPCODE_RR);
 		OPCODEFORMAT_CASE(TEST_RR, OPCODE_RR);
+		OPCODEFORMAT_CASE(BRK, OPCODE);
 	default: return OPCODE_INVALID;
 	}
 	UNREACHABLE;

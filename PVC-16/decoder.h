@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-
+#include <bit>
 #include "opcode.h"
 
 class Decoder

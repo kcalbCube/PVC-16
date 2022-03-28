@@ -1,3 +1,4 @@
+#ifndef DISABLE_VIDEO
 #include "video.h"
 #include "memory.h"
 #include "interrupt.h"
@@ -5,7 +6,7 @@
 
 void VideoController::process(void)
 {
-	for(Operation& op : dc->operations)
+	for(Operation& op : DeviceController::getOperations())
 		switch (op)
 		{
 		case Operation::VIDEOCONTROLLER_SET_MODE:
@@ -26,21 +27,20 @@ void VideoController::process(void)
 	{
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
 		SDL_RenderClear(renderer);
-		size_t i = 0;
+		int i = 0;
 		auto t1 = busRead16(VIDEOCONTROLLER_T1);
 
 		SDL_Point points[144 * 100]{};
-		for (size_t y = 0; y < 100; ++y)
-			for (size_t x = 0; x < 144 / 8; ++x)
+		for (int y = 0; y < 100; ++y)
+			for (int x = 0; x < 144 / 8; ++x)
 			{
 				auto byte = mc.read8(t1 + y * (144 / 8) + x);
-				for (size_t j = 0; j < 8; ++j)
+				for (int j = 0; j < 8; ++j)
 					if (byte & (1 << (7-j)))
 						points[i++] = SDL_Point(x * 8 + j, y);
 			}
 		SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 		SDL_RenderDrawPoints(renderer, points, i);
-
 		delayedInterrupt(interrupts::VBI);
 	}
 	break;
@@ -60,7 +60,7 @@ void VideoController::setVideoMode(VideoMode vmode)
 	if (!sdlInitialized)
 	{
 		SDL_Init(SDL_INIT_EVERYTHING);
-		TTF_Init();
+		//TTF_Init();
 		sdlInitialized = true;
 	}
 	if (renderer)
@@ -89,6 +89,7 @@ VideoController::~VideoController(void)
 	if (window)
 		SDL_DestroyWindow(window);
 
-	TTF_Quit();
+	//TTF_Quit();
 	SDL_Quit();
 }
+#endif

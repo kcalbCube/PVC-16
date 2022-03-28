@@ -60,7 +60,7 @@ int main(int argc, char** args)
     unsigned tableLen = 0;
     char tableLenBuffer[5]{};
     input.get(tableLenBuffer, 5);
-    sscanf_s(tableLenBuffer, "%04X", &tableLen);
+    sscanf(tableLenBuffer, "%04X", &tableLen);
     std::string syms;
     std::copy_n(std::istream_iterator<char>(input), tableLen, std::back_inserter(syms));
 
@@ -74,7 +74,7 @@ int main(int argc, char** args)
         auto a16toi = [](const std::string& str) -> int
         {
             int result = 0;
-            sscanf_s(str.c_str(), "%X", &result);
+            sscanf(str.c_str(), "%X", &result);
             return result;
         };
 

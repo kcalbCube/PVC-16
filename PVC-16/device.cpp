@@ -2,11 +2,26 @@
 #include "bus.h"
 #include <iostream>
 
+namespace
+{
+	std::deque<Operation> operations;
+};
+
+void DeviceController::addOperation(Operation op)
+{
+	operations.push_back(op);
+}
+
+std::deque<Operation>& DeviceController::getOperations(void)
+{
+	return operations;
+}
+
 void DeviceController::start(void)
 {
-	std::thread thr([this](void) mutable -> void
+	thread = std::make_unique<std::jthread>([this](std::stop_token stopToken) mutable -> void
 	{
-		while (true)
+		while (!stopToken.stop_requested())
 		{
 			auto start = std::chrono::high_resolution_clock::now();
 			for (Device* device : this->devices)
@@ -14,14 +29,18 @@ void DeviceController::start(void)
 				++device->tick;
 				device->process();
 			}
-			this->operations.clear();
+			operations.clear();
 			std::this_thread::sleep_until(start + std::chrono::milliseconds(1));
 		}
 	});
 
-	thr.detach();
+	thread->detach();
 }
 
+DeviceController::~DeviceController(void)
+{
+	thread->request_stop();
+}
 void DeviceController::addDevice(Device* device)
 {
 	device->dc = this;

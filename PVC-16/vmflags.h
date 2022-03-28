@@ -2,7 +2,11 @@
 
 #define ENABLE_EXECUTION_TIME_CAPTURE
 #define ENABLE_WORKFLOW
+
+// TODO: remove this
+#ifndef DISABLE_VIDEO
 #define ENABLE_VIDEO
+#endif
 inline struct VMFlags
 {
 #ifdef ENABLE_WORKFLOW

@@ -7,7 +7,7 @@
 unsigned a16toi(const std::string& str)
 {
 	unsigned result = 0;
-	sscanf_s(str.c_str(), "%X", &result);
+	sscanf(str.c_str(), "%X", &result);
 	return result;
 }
 

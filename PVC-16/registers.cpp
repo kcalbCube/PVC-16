@@ -16,7 +16,7 @@ namespace registers
 	PackedStatus packStatus(void)
 	{
 		PackedStatus ps{};
-#define WRITE_PS(member, id) if(status.##member) ps |= (1 << (id))
+#define WRITE_PS(member, id) if(status. member) ps |= (1 << (id))
 		WRITE_PS(zero		, 0);
 		WRITE_PS(sign		, 1);
 		WRITE_PS(overflow	, 2);
@@ -27,7 +27,7 @@ namespace registers
 
 	void unpackStatus(PackedStatus ps)
 	{
-#define READ_PS(member, id)	(status.##member) = (ps & 1 << (id))
+#define READ_PS(member, id)	(status. member) = (ps & 1 << (id))
 		READ_PS(zero	 , 0);
 		READ_PS(sign	 , 1);
 		READ_PS(overflow , 2);

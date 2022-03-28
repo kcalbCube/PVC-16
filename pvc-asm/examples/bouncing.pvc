@@ -76,7 +76,7 @@ vbi:
 	memset [@T1] 3A98h 0h
 	call @render
 	call @process
-	ret
+	rei
 
 .org 1000h
 T1:

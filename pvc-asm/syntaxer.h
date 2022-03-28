@@ -3,6 +3,7 @@
 #include <numeric>
 #include "lexer.h"
 #include <ranges>
+#include <variant>
 
 struct LabelDefinition{ std::string label; };
 struct LabelUse{ std::string label; };
@@ -14,7 +15,10 @@ struct Newline {};
 
 struct IndirectAddress
 {
-	Register base{}; Register index{}; uint8_t scale = 1; std::variant<Constant, LabelUse> disp;
+	Register base{}; 
+	Register index{}; 
+	uint8_t scale = 1; 
+	std::variant<Constant, LabelUse> disp;
 };
 
 struct Mnemonic

@@ -16,14 +16,16 @@ class Device;
 class DeviceController
 {
 public:
-	std::deque<Operation> operations;
+	static void addOperation(Operation);
+	static std::deque<Operation>& getOperations(void);
 	std::deque<std::function<void()>> workList, emptyList;
 	std::vector<Device*> devices;
+	std::unique_ptr<std::jthread> thread;
 	void start(void);
 	void addDevice(Device* device);
-};
 
-inline DeviceController* dc = nullptr;
+	~DeviceController(void);
+};
 
 class Device
 {

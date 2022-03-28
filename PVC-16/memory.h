@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdint>
 #include "registers.h"
-#include <vector>
 
 using addr_t = uint16_t;
 
@@ -9,7 +8,7 @@ constexpr auto ramSize = 0xFFFF;
 class MemoryController
 {
 public:
-	uint8_t data[ramSize]{};
+	uint8_t data[ramSize]{0};
 
 	void fill(uint8_t);
 
@@ -24,8 +23,6 @@ public:
 	[[maybe_unused]] size_t readInRegister(addr_t, registers::RegisterID) const;
 
 	void writeFromRegister(addr_t, registers::RegisterID);
-
-	void write(addr_t, const std::vector<uint8_t>&);
 };
 
 inline MemoryController mc;

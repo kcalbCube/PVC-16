@@ -23,8 +23,8 @@ enum VideoMode
 
 class VideoController : public Device
 {
-	SDL_Window* window;
-	SDL_Renderer* renderer;
+	SDL_Window* window = nullptr;
+	SDL_Renderer* renderer = nullptr;
 
 	uint8_t modeSet = 0;
 

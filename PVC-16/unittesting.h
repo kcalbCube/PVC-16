@@ -5,6 +5,7 @@
 #include <numeric>
 #include "stack.h"
 #include "memory.h"
+#include <cstring>
 
 struct RegisterWrite2x8Read16
 {

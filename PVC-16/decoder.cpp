@@ -8,8 +8,9 @@
 #include "vmflags.h"
 #include "bus.h"
 #include <magic_enum.hpp>
+#include <cstring>
 
-#pragma warning(disable: 4062)
+//#pragma warning(disable: 4062)
 
 uint16_t Decoder::readAddress(SIB sib, const uint16_t disp)
 {
@@ -325,7 +326,7 @@ void Decoder::processRM(Opcode opcode, registers::RegisterID r1, uint16_t addr)
 	case MOV_RM:
 		(void)mc.readInRegister(addr, r1);
 		break;
-	case LEA:
+	case LEA_RM:
 		write(r1, addr);
 		break;
 	default:
@@ -372,7 +373,7 @@ void Decoder::processR(Opcode opcode, registers::RegisterID r1)
 	case NEG:
 	{
 		if (is16register(r1))
-			registers::updateStatus16(static_cast<unsigned>(reinterpret_cast<short&>(get16(r1)) *= -1));
+			registers::updateStatus16(static_cast<unsigned>(reinterpret_cast<int16_t&>(get16(r1)) *= -1));
 		else
 			registers::updateStatus8(static_cast<unsigned>(reinterpret_cast<int8_t&>(get8(r1)) *= -1));
 		break;
@@ -386,36 +387,6 @@ void Decoder::processR(Opcode opcode, registers::RegisterID r1)
 	case PUSH_R:
 	{
 		stack::push(r1);
-		break;
-	}
-	case POPF:
-	{
-		stack::popf();
-		break;
-	}
-	case PUSHF:
-	{
-		stack::pushf();
-		break;
-	}
-	case PUSHA:
-	{
-		stack::push(registers::A);
-		stack::push(registers::B);
-		stack::push(registers::C);
-		stack::push(registers::D);
-		stack::push(registers::E);
-		stack::push(registers::SI);
-		break;
-	}
-	case POPA:
-	{
-		stack::pop(registers::SI);
-		stack::pop(registers::E);
-		stack::pop(registers::D);
-		stack::pop(registers::C);
-		stack::pop(registers::B);
-		stack::pop(registers::A);
 		break;
 	}
 	default:
@@ -582,7 +553,7 @@ void Decoder::processJO(Opcode opcode)
 	case REI:
 		stack::popf();
 		stack::pop(registers::IP);
-		break;
+	break;
 	case RET:
 		stack::pop(registers::IP);
 	break;
@@ -601,6 +572,36 @@ void Decoder::processJO(Opcode opcode)
 		registersDump();
 	}
 	break;
+	case POPF:
+	{
+		stack::popf();
+		break;
+	}
+	case PUSHF:
+	{
+		stack::pushf();
+		break;
+	}
+	case PUSHA:
+	{
+		stack::push(registers::A);
+		stack::push(registers::B);
+		stack::push(registers::C);
+		stack::push(registers::D);
+		stack::push(registers::E);
+		stack::push(registers::SI);
+		break;
+	}
+	case POPA:
+	{
+		stack::pop(registers::SI);
+		stack::pop(registers::E);
+		stack::pop(registers::D);
+		stack::pop(registers::C);
+		stack::pop(registers::B);
+		stack::pop(registers::A);
+		break;
+	}
 	case NOP: break;
 	default:
 		UNREACHABLE;
@@ -639,6 +640,11 @@ void Decoder::processMM(Opcode opcode, uint16_t addr1, uint16_t addr2)
 {
 	switch (opcode)
 	{
+	case LEA_MM:
+	{
+		mc.write16(addr1, addr2);
+	}
+	break;
 	case MOV_MM16:
 	{
 		mc.write16(addr1, mc.read16(addr2));
@@ -726,7 +732,9 @@ void Decoder::process(void)
 		const auto r2 = static_cast<registers::RegisterID>(mc.read8(ip++));
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%%%s %%%s\n", registers::registerId2registerName[r1].c_str(), registers::registerId2registerName[r2].c_str());
+			printf("%%%s{%04X} %%%s{%04X}\n", 
+				registers::registerId2registerName[r1].c_str(), registers::read(r1),
+				registers::registerId2registerName[r2].c_str(), registers::read(r2));
 #endif
 		processRR(opcode, r1, r2);
 	}
@@ -739,7 +747,9 @@ void Decoder::process(void)
 		ip += 2;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%%%s %04X\n", registers::registerId2registerName[r1].c_str(), c);
+			printf("%%%s{%04X} %04X\n", 
+				registers::registerId2registerName[r1].c_str(), registers::read(r1),
+				c);
 #endif
 		processRC(opcode, r1, c);
 	}
@@ -750,7 +760,9 @@ void Decoder::process(void)
 		const auto r1 = static_cast<registers::RegisterID>(mc.read8(ip++));
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%%%s\n", registers::registerId2registerName[r1].c_str());
+			printf("%%%s{%04X}\n", 
+				registers::registerId2registerName[r1].c_str(),
+				registers::read(r1));
 #endif
 		processR(opcode, r1);
 	}
@@ -766,7 +778,10 @@ void Decoder::process(void)
 		ip += sib.disp ? 2 : 0;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%%%s %s{%04X}\n", registers::registerId2registerName[r1].c_str(), renderIndirectAddress(sib, disp).c_str(), addr);
+			printf("%%%s{%04X} %s{%04X}\n", 
+				registers::registerId2registerName[r1].c_str(), registers::read(r1),
+				renderIndirectAddress(sib, disp).c_str(), 
+				addr);
 #endif
 		processRM(opcode, r1, addr);
 	}
@@ -782,7 +797,10 @@ void Decoder::process(void)
 		ip += sib.disp ? 2 : 0;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%s{%04X} %04X\n", renderIndirectAddress(sib, disp).c_str(), addr, c);
+			printf("%s{%04X} %04X\n",
+				 renderIndirectAddress(sib, disp).c_str(), 
+				 addr, 
+				 c);
 #endif
 		processMC(opcode, addr, c);
 	}
@@ -797,7 +815,10 @@ void Decoder::process(void)
 		ip += sib.disp ? 2 : 0;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%s{%04X} %04X\n", renderIndirectAddress(sib, disp).c_str(), addr, c);
+			printf("%s{%04X} %04X\n", 
+				renderIndirectAddress(sib, disp).c_str(), 
+				addr, 
+				c);
 #endif
 		processMC8(opcode, addr, c);
 	}
@@ -812,7 +833,10 @@ void Decoder::process(void)
 		ip += sib.disp ? 2 : 0;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%s{%04X} %%%s\n", renderIndirectAddress(sib, disp).c_str(), addr, registers::registerId2registerName[r1].c_str());
+			printf("%s{%04X} %%%s{%04X}\n", 
+				renderIndirectAddress(sib, disp).c_str(), 
+				addr, 
+				registers::registerId2registerName[r1].c_str(), registers::read(r1));
 #endif
 		processMR(opcode, addr, r1);
 
@@ -827,7 +851,9 @@ void Decoder::process(void)
 		ip += sib.disp ? 2 : 0;
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%s{%04X}\n", renderIndirectAddress(sib, disp).c_str(), addr);
+			printf("%s{%04X}\n", 
+				renderIndirectAddress(sib, disp).c_str(), 
+				addr);
 #endif
 		processM(opcode, addr);
 
@@ -846,7 +872,11 @@ void Decoder::process(void)
 		const uint16_t addr2 = readAddress(sib2, disp2);
 #ifdef ENABLE_WORKFLOW
 		if (vmflags.workflowEnabled)
-			printf("%s{%04X} %s{%04X}\n", renderIndirectAddress(sib1, disp1).c_str(), addr1, renderIndirectAddress(sib2, disp2).c_str(), addr2);
+			printf("%s{%04X} %s{%04X}\n", 
+				renderIndirectAddress(sib1, disp1).c_str(), 
+				addr1, 
+				renderIndirectAddress(sib2, disp2).c_str(), 
+				addr2);
 #endif
 		processMM(opcode, addr1, addr2);
 

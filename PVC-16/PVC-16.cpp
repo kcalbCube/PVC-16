@@ -10,6 +10,7 @@
 #include "utility.h"
 #include "vmflags.h"
 #include "device.h"
+#include <memory>
 
 #ifdef ENABLE_VIDEO
 #include <SDL.h>
@@ -34,7 +35,7 @@ void loadPVCObjFromFile(const std::string& fileName)
     unsigned tableLen = 0;
     char tableLenBuffer[5]{};
     input.get(tableLenBuffer, 5);
-    sscanf_s(tableLenBuffer, "%04X", &tableLen);
+    sscanf(tableLenBuffer, "%04X", &tableLen);
     std::string syms;
     std::copy_n(std::istream_iterator<char>(input), tableLen, std::back_inserter(syms));
 
@@ -47,7 +48,7 @@ void loadPVCObjFromFile(const std::string& fileName)
         auto a16toi = [](const std::string& str) -> int
         {
             int result = 0;
-            sscanf_s(str.c_str(), "%X", &result);
+            sscanf(str.c_str(), "%X", &result);
             return result;
         };
 
@@ -78,12 +79,12 @@ void loadDumpFromFile(const std::string& fileName, uint16_t org)
 
 void start(void)
 {
-    DeviceController dc;
-    ::dc = &dc;
-
-    dc.addDevice(new DebugOutputDevice);
-    dc.addDevice(new VideoController);
-    dc.start();
+    std::unique_ptr<DeviceController> dc = std::make_unique<DeviceController>();
+    dc->addDevice(new DebugOutputDevice);
+    #ifdef ENABLE_VIDEO
+    dc->addDevice(new VideoController);
+    #endif
+    dc->start();
 
     registers::status.interrupt = 1;
 #ifdef ENABLE_EXECUTION_TIME_CAPTURE
