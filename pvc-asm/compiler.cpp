@@ -56,6 +56,30 @@ void Compiler::writeLabel(const std::string& label)
 		write16(*lbl);
 }
 
+void Compiler::writeLabels(Expression& expression)
+{
+	for(auto&& l : localSymbols[currentSymbol])
+		expression.setLabel(LabelDefinition(l.first), l.second);
+	for(auto&& l : symbols)
+		expression.setLabel(LabelDefinition(l.first), l.second);
+}
+void Compiler::writeExpression(Expression expression)
+{
+	writeLabels(expression);
+	if(expression.isConstexpr())
+	{
+		if(expression.isByte())
+			write(expression.evaluate());
+		else
+			write16(expression.evaluate());
+	}
+	else
+	{
+		expressions.emplace_back(expression, ip);
+		ip += expression.isByte() ? 1 : 2;
+	}
+}
+
 SIB Compiler::generateSIB(const IndirectAddress& ia)
 {
 	return SIB(ia.scale, ia.index.name.empty() ? registers::NO_REG : registers::registerName2registerId.at(ia.index.name),
@@ -82,6 +106,10 @@ void Compiler::writeDisp(const IndirectAddress& ia)
 		[&](const LabelUse& lu) -> void
 			{
 				writeLabel(lu.label);
+			},
+		[&](const Expression& expr) -> void
+			{
+				writeExpression(expr);
 			}
 	}, ia.disp);
 }
@@ -109,7 +137,7 @@ void Compiler::subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint1
 	{
 		write(dmnemonic);
 		size_t i = 0;
-		std::deque<decltype(IndirectAddress::disp)> dispDeque;
+		std::deque<IndirectAddress> dispDeque;
 
 		for (auto&& c : mnemonic.mnemonics)
 		{
@@ -133,17 +161,24 @@ void Compiler::subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint1
 
 				write(std::bit_cast<uint8_t>(generateSIB(ia)));
 				if (isDispPresent(ia))
-					dispDeque.push_back(ia.disp);
+					dispDeque.push_back(ia);
 			}
 				break;
+			case MI_EXPRESSION:
+			{
+				auto expression = std::get<Expression>(c);
+				if(args & (1 << i))
+					expression.toByte();
+
+				writeExpression(expression);
+			}
+				break;
+
 			}
 			++i;
 		}
 		for(auto&& disp : dispDeque)
-			if (disp.index() == 1) // LabelUse
-				writeLabel(std::get<LabelUse>(disp).label);
-			else
-				write16(std::get<Constant>(disp).constant);
+			writeDisp(disp);
 	}
 	catch (std::out_of_range&)
 	{
@@ -156,10 +191,15 @@ void Compiler::subcompileMnemonic(const Mnemonic& mnemonic, const std::map<uint1
 
 void Compiler::compileMnemonic(Mnemonic mnemonic)
 {
-	if(mnemonic.name == "INT")
+	if(mnemonic.name == "NOP")
+	{
+		subcompileMnemonic(mnemonic, {{constructDescription(), NOP}});
+	}
+	else if(mnemonic.name == "INT")
 	{
 		subcompileMnemonic(mnemonic, {
 			{constructDescription(CONSTANT), {INT, ARG1_8}},
+			{constructDescription(EXPRESSION), {INT, ARG1_8}},
 			});
 	}
 	else if(mnemonic.name == "MOV")
@@ -167,11 +207,13 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 		subcompileMnemonic(mnemonic, {
 			{constructDescription(REGISTER, REGISTER), MOV_RR},
 			{constructDescription(REGISTER, CONSTANT), MOV_RC16},
+			{constructDescription(REGISTER, EXPRESSION), MOV_RC16},
 			{constructDescription(REGISTER, LABEL), MOV_RC16},
 			{constructDescription(REGISTER, INDIRECT_ADDRESS), MOV_RM},
 			{constructDescription(INDIRECT_ADDRESS, REGISTER), MOV_MR},
 			{constructDescription(INDIRECT_ADDRESS, INDIRECT_ADDRESS), MOV_MM16},
 			{constructDescription(INDIRECT_ADDRESS, CONSTANT), MOV_MC16},
+			{constructDescription(INDIRECT_ADDRESS, EXPRESSION), MOV_MC16},
 			{constructDescription(INDIRECT_ADDRESS, LABEL), MOV_MC16},
 			});
 	}
@@ -180,6 +222,7 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 		subcompileMnemonic(mnemonic, {
 			{constructDescription(INDIRECT_ADDRESS, INDIRECT_ADDRESS), {MOV_MM8, ARG2_8}},
 			{constructDescription(INDIRECT_ADDRESS, CONSTANT), {MOV_MC8, ARG2_8}},
+			{constructDescription(INDIRECT_ADDRESS, EXPRESSION), {MOV_MC8, ARG2_8}},
 			});
 	}
 	else if (mnemonic.name == "SHL")
@@ -211,6 +254,7 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 		subcompileMnemonic(mnemonic, {
 		{constructDescription(REGISTER, REGISTER), ADD},
 		{constructDescription(REGISTER, CONSTANT), ADD_C16},
+		{constructDescription(REGISTER, EXPRESSION), ADD_C16},
 		{constructDescription(REGISTER, LABEL), ADD_C16},
 				});
 	}
@@ -219,6 +263,7 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 		subcompileMnemonic(mnemonic, {
 		{constructDescription(REGISTER, REGISTER), SUB},
 		{constructDescription(REGISTER, CONSTANT), SUB_C16},
+		{constructDescription(REGISTER, EXPRESSION), SUB_C16},
 		{constructDescription(REGISTER, LABEL), SUB_C16},
 					});
 	}
@@ -227,6 +272,7 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 		subcompileMnemonic(mnemonic, {
 		{constructDescription(REGISTER, REGISTER), DIV},
 		{constructDescription(REGISTER, CONSTANT), DIV_C16},
+		{constructDescription(REGISTER, EXPRESSION), DIV_C16},
 		{constructDescription(REGISTER, LABEL), DIV_C16},
 			});
 	}
@@ -235,6 +281,7 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 		subcompileMnemonic(mnemonic, {
 		{constructDescription(REGISTER, REGISTER), MOD_RR},
 		{constructDescription(REGISTER, CONSTANT), MOD_RC},
+		{constructDescription(REGISTER, EXPRESSION), MOD_RC},
 		{constructDescription(REGISTER, LABEL), MOD_RC},
 			});
 	}
@@ -243,6 +290,7 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 		subcompileMnemonic(mnemonic, {
 		{constructDescription(REGISTER, REGISTER), MUL},
 		{constructDescription(REGISTER, CONSTANT), MUL_C16},
+		{constructDescription(REGISTER, EXPRESSION), MUL_C16},
 		{constructDescription(REGISTER, LABEL), MUL_C16},
 			});
 	}
@@ -280,60 +328,89 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 #define CONSTRUCT_JUMP(name_, opcode_) else if(mnemonic.name == #name_) \
 	subcompileMnemonic(mnemonic, {\
 	{constructDescription(CONSTANT), opcode_},\
-	{constructDescription(LABEL), opcode_}})
+	{constructDescription(LABEL), opcode_},\
+	{constructDescription(EXPRESSION), opcode_}})
 
 	CONSTRUCT_JUMP(JMP, JMP);
-
-	CONSTRUCT_JUMP(JE, JZ);
-	CONSTRUCT_JUMP(JZ, JZ);
-
-	CONSTRUCT_JUMP(JNZ, JNZ);
-	CONSTRUCT_JUMP(JNE, JNZ);
-
-	CONSTRUCT_JUMP(JG, JG);
-	CONSTRUCT_JUMP(JNLE, JG);
-	CONSTRUCT_JUMP(JNLZ, JG);
-
-	CONSTRUCT_JUMP(JLE, JNG);
-	CONSTRUCT_JUMP(JLZ, JNG);
-	CONSTRUCT_JUMP(JNG, JNG);
-
-	CONSTRUCT_JUMP(JGE, JGZ);
-	CONSTRUCT_JUMP(JGZ, JGZ);
-	CONSTRUCT_JUMP(JNL, JGZ);
-
-	CONSTRUCT_JUMP(JNGZ, JL);
-	CONSTRUCT_JUMP(JNGE, JL);
-	CONSTRUCT_JUMP(JL  , JL);
-
-	CONSTRUCT_JUMP(JB, JB);
-	CONSTRUCT_JUMP(JNAE, JB);
-	CONSTRUCT_JUMP(JNAZ, JB);
-	CONSTRUCT_JUMP(JC, JB);
-
-	CONSTRUCT_JUMP(JNB, JNB);
-	CONSTRUCT_JUMP(JAE, JNB);
-	CONSTRUCT_JUMP(JAZ, JNB);
-	CONSTRUCT_JUMP(JNC, JNB);
-
-	CONSTRUCT_JUMP(JBE, JBZ);
-	CONSTRUCT_JUMP(JBZ, JBZ);
-	CONSTRUCT_JUMP(JNA, JBZ);
-
-	CONSTRUCT_JUMP(JA, JA);
-	CONSTRUCT_JUMP(JNBE, JA);
-	CONSTRUCT_JUMP(JNBZ, JA);
-
 	CONSTRUCT_JUMP(CALL, CALL);
 #undef CONSTRUCT_JUMP
+#define CONSTRUCT_PREFIX(name_, opcode_) else if(mnemonic.name == #name_) subcompileMnemonic(mnemonic, {{constructDescription(), opcode_}})
+CONSTRUCT_PREFIX(CZ, CZ);
+CONSTRUCT_PREFIX(CE, CZ);
+
+CONSTRUCT_PREFIX(CNZ, CNZ);
+CONSTRUCT_PREFIX(CNE, CNZ);
+
+CONSTRUCT_PREFIX(CG, CG);
+CONSTRUCT_PREFIX(CNLE, CG);
+CONSTRUCT_PREFIX(CNLZ, CG);
+
+CONSTRUCT_PREFIX(CLE, CNG);
+CONSTRUCT_PREFIX(CLZ, CNG);
+CONSTRUCT_PREFIX(CNG, CNG);
+
+CONSTRUCT_PREFIX(CGE, CGZ);
+CONSTRUCT_PREFIX(CGZ, CGZ);
+CONSTRUCT_PREFIX(CNL, CGZ);
+
+CONSTRUCT_PREFIX(CNGZ, CL);
+CONSTRUCT_PREFIX(CNGE, CL);
+CONSTRUCT_PREFIX(CL  , CL);
+
+CONSTRUCT_PREFIX(CB, CB);
+CONSTRUCT_PREFIX(CNAE, CB);
+CONSTRUCT_PREFIX(CNAZ, CB);
+CONSTRUCT_PREFIX(CC, CB);
+
+CONSTRUCT_PREFIX(CNB, CNB);
+CONSTRUCT_PREFIX(CAE, CNB);
+CONSTRUCT_PREFIX(CAZ, CNB);
+CONSTRUCT_PREFIX(CNC, CNB);
+
+CONSTRUCT_PREFIX(CBE, CBZ);
+CONSTRUCT_PREFIX(CBZ, CBZ);
+CONSTRUCT_PREFIX(CNA, CBZ);
+
+CONSTRUCT_PREFIX(CA, CA);
+CONSTRUCT_PREFIX(CNBE, CA);
+CONSTRUCT_PREFIX(CNBZ, CA);
+
+CONSTRUCT_PREFIX(PREINC1, PREINC01);
+CONSTRUCT_PREFIX(PREINC01, PREINC01);
+CONSTRUCT_PREFIX(PREINC2, PREINC10);
+CONSTRUCT_PREFIX(PREINC10, PREINC10);
+CONSTRUCT_PREFIX(PREINC1|2, PREINC11);
+CONSTRUCT_PREFIX(PREINC2|1, PREINC11);
+CONSTRUCT_PREFIX(PREINC11, PREINC11);
+
+CONSTRUCT_PREFIX(POSTINC1, POSTINC01);
+CONSTRUCT_PREFIX(POSTINC01, POSTINC01);
+CONSTRUCT_PREFIX(POSTINC2, POSTINC10);
+CONSTRUCT_PREFIX(POSTINC10, POSTINC10);
+CONSTRUCT_PREFIX(POSTINC1|2, POSTINC11);
+CONSTRUCT_PREFIX(POSTINC2|1, POSTINC11);
+CONSTRUCT_PREFIX(POSTINC11, POSTINC11);
+
+#undef CONSTRUCT_PREFIX
 	else if(mnemonic.name == "CMP")
 	{
 		subcompileMnemonic(mnemonic, {
 			{constructDescription(REGISTER, CONSTANT), CMP_RC},
 			{constructDescription(REGISTER, LABEL), CMP_RC},
 			{constructDescription(REGISTER, REGISTER), CMP_RR},
+			{constructDescription(INDIRECT_ADDRESS, CONSTANT), CMP_MC},
+			{constructDescription(INDIRECT_ADDRESS, REGISTER), CMP_MR},
+			{constructDescription(INDIRECT_ADDRESS, INDIRECT_ADDRESS), CMP_MM},
+			{constructDescription(REGISTER, INDIRECT_ADDRESS), CMP_RM}
 			});
 	} 
+	else if(mnemonic.name == "CMPB")
+	{
+		subcompileMnemonic(mnemonic, {
+			{constructDescription(INDIRECT_ADDRESS, INDIRECT_ADDRESS), CMP_MM8},
+			{constructDescription(INDIRECT_ADDRESS, CONSTANT), {CMP_MC8, ARG2_8}}
+		});
+	}
 	else if (mnemonic.name == "LOOP")
 	{
 	subcompileMnemonic(mnemonic, {
@@ -464,7 +541,7 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 			});
 	}
 	else
-		error(mnemonic.file, mnemonic.line, "unknown mnemonic.");
+		error(mnemonic.file, mnemonic.line, std::string("unknown mnemonic \"") + mnemonic.name + "\"");
 
 }
 
@@ -476,7 +553,23 @@ void Compiler::compile(std::vector<SyntaxUnit>& syntax)
 				{
 					if (mnemonic.name == ".ORG")
 					{
-						ip = static_cast<uint16_t>(std::get<Constant>(mnemonic.mnemonics[0]).constant);
+						std::visit(visit_overload
+						{
+							[&](const Constant& c) -> void
+							{
+								ip = static_cast<uint16_t>(c.constant);
+							},
+							[&](Expression expr) -> void
+							{
+								writeLabels(expr);
+								if(expr.isConstexpr())
+									ip = static_cast<uint16_t>(expr.evaluate());
+								else
+									error(mnemonic.file, mnemonic.line, "cannot evaluate expression.");
+							},
+							[&](auto) -> void { error(mnemonic.file, mnemonic.line, "bad .org argument."); }
+						}, mnemonic.mnemonics[0]);
+						
 						data.reserve(ip);
 					}
 					else if (mnemonic.name == "DB")
@@ -485,16 +578,14 @@ void Compiler::compile(std::vector<SyntaxUnit>& syntax)
 						{
 							std::visit(visit_overload
 								{
-									[&](Constant c) -> void
+									[&](const Constant& c) -> void
 									{
 										write(static_cast<uint8_t>(c.constant));
 									},
-									[&](String s) -> void
+									[&](const String& s) -> void
 									{
 										for (auto&& c : s.string)
-										{
 											write(c);
-										}
 									},
 									[&](auto) -> void { error(mnemonic.file, mnemonic.line, "bad db argument."); }
 								}, v);
@@ -505,11 +596,11 @@ void Compiler::compile(std::vector<SyntaxUnit>& syntax)
 						{
 							std::visit(visit_overload
 								{
-									[&](Constant c) -> void
+									[&](const Constant& c) -> void
 									{
 										write16(static_cast<uint16_t>(c.constant));
 									},
-									[&](LabelUse l) -> void
+									[&](const LabelUse& l) -> void
 									{
 										writeLabel(l.label);
 									},
@@ -553,8 +644,30 @@ void Compiler::compile(std::vector<SyntaxUnit>& syntax)
 				[&](const LabelDefinition& ld) -> void
 				{
 					for (auto&& ds : delayedSymbols[ld.label])
-							write16(ds, ip);
-						delayedSymbols.erase(ld.label);
+					{
+						write16(ds, ip);
+					}
+					delayedSymbols.erase(ld.label);
+
+					for(auto&& [expr, eip] : expressions)
+						expr.setLabel(ld, ip);
+
+					std::erase_if(expressions, [&](auto&& x) -> bool
+					{
+						auto&& expr = x.first;
+						auto&& eip = x.second;
+
+						if(expr.isConstexpr())
+						{
+							if(expr.isByte())
+								write(eip, expr.evaluate());
+							else
+								write16(eip, expr.evaluate());
+							return true;
+						}
+						return false;
+					});
+					
 					if(ld.label.starts_with('.'))
 						localSymbols[currentSymbol][ld.label] = ip;
 					else
@@ -568,12 +681,13 @@ void Compiler::compile(std::vector<SyntaxUnit>& syntax)
 				},
 				[&](const Newline& nl) -> void {}
 			}, syntax[i]);
+
+	for (const auto& key : delayedSymbols | std::views::keys)
+		error(std::string("undeclared symbol \"") + key + "\".");
 }
 
 void Compiler::writeInOstream(std::ostream& output)
 {
-	for (const auto& key : delayedSymbols | std::views::keys)
-		warning(std::string("undeclared symbol \"") + key + "\".");
 
 	char buffer[128];
 	std::string syms;

@@ -69,7 +69,7 @@ if(TRUE)
     target_compile_options(${PROJECT_NAME} PRIVATE
         -std=c++2b
         -flto
-        -O0
+        -O3
         -march=native
         -mfpmath=sse
         ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT}

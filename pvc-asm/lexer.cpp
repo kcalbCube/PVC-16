@@ -2,16 +2,15 @@
 
 #include "utility.h"
 #include <boost/algorithm/string/replace.hpp>
+#include "eval.h"
 
 std::vector<Lexema> Lexer::lex(const std::vector<Token>& tokens)
 {
-	enum
-	{
-		NONE,
-		INDIRECT_ADDRESS,
-	} state = NONE;
+	bool inIndirectAddress = false;
+	bool inExpr = false;
+
 	std::vector<Lexema> lexemas;
-	Lexema indirectAddress;
+	Lexema indirectAddress, expr;
 	unsigned line = 0;
 	std::string file = curFile;
 
@@ -20,24 +19,51 @@ std::vector<Lexema> Lexer::lex(const std::vector<Token>& tokens)
 		Lexema lexema;
 		if (token == "[")
 		{
-			if (state == INDIRECT_ADDRESS)
+			if (inIndirectAddress)
 				error(file, line, "'[' inside the indirect address block. Perhaps ']' missed.");
 			else
 			{
-				state = INDIRECT_ADDRESS;
+				inIndirectAddress = true;
 				indirectAddress = Lexema(LexemID::INDIRECT_ADDRESS, std::vector<Lexema>());
 			}
 			continue;
 		}
 		else if (token == "]")
 		{
-			if (state != INDIRECT_ADDRESS)
+			if (!inIndirectAddress)
 			{
 				error(file, line, "unmatched ']'. Perhaps '[' missed.");
 				continue;
 			}
-			state = NONE;
+			inIndirectAddress = false;
 			lexema = indirectAddress;
+		}
+		else if (token == "{")
+		{
+			if (inExpr)
+				error(file, line, "'{' inside the expression block. Perhaps '}' missed.");
+			else
+			{
+				inExpr = true;
+				expr = Lexema(LexemID::EXPR, std::vector<Lexema>());
+			}
+			continue;
+		}
+		else if (token == "}")
+		{
+			if (!inExpr)
+			{
+				error(file, line, "unmatched '}'. Perhaps '{' missed.");
+				continue;
+			}
+			inExpr = false;
+			lexema = expr;
+			Expression expression(std::get<std::vector<Lexema>>(expr.lexemas));
+			if(expression.isConstexpr())
+				lexema = Lexema(LexemID::NUMBER, expression.evaluate());
+			else
+				lexema = Lexema(LexemID::EXPR, expression);
+			
 		}
 		else if (token == "\n")
 		{
@@ -48,11 +74,17 @@ std::vector<Lexema> Lexer::lex(const std::vector<Token>& tokens)
 		{
 			lexema = Lexema(LexemID::NUMBER, a16toi(token));
 		}
-		else if (token == "+" || token == "-")
+		else if ([](auto token) -> bool 
+		{ 
+			for(auto&& c : {"+", "-", "*", "/", "%", "<<", ">>", "^", "|", "&", "~", "(", ")"}) 
+				if(token == c) 
+					return true;
+			return false;
+		}(token))
 		{
-			if (state != INDIRECT_ADDRESS)
+			if (!inIndirectAddress && !inExpr)
 			{
-				error(file, line, "operator outside the indirect address block.");
+				error(file, line, "operator outside the expression block.");
 				continue;
 			}
 			lexema = Lexema(LexemID::OPERATION, token);
@@ -67,9 +99,9 @@ std::vector<Lexema> Lexer::lex(const std::vector<Token>& tokens)
 		}
 		else if (token.ends_with(':'))
 		{
-			if (state == INDIRECT_ADDRESS)
+			if (inIndirectAddress || inExpr)
 			{
-				error(file, line, "label definition inside the indirect address block. Perhaps ']' missed.");
+				error(file, line, "label definition inside the expression block.");
 				continue;
 			}
 			lexema = Lexema(LexemID::LABEL, token.substr(0, token.size() - 1));
@@ -83,17 +115,23 @@ std::vector<Lexema> Lexer::lex(const std::vector<Token>& tokens)
 		else
 			lexema = Lexema(LexemID::MNEMONIC, token);
 
-		if (state == INDIRECT_ADDRESS)
+		if (inExpr)
+		{
+			expr.file = file;
+			expr.line = line;
+			std::get<std::vector<Lexema>>(expr.lexemas).emplace_back(lexema);
+		}
+		else if (inIndirectAddress)
 		{
 			indirectAddress.file = file;
 			indirectAddress.line = line;
-			std::get<std::vector<Lexema>>(indirectAddress.lexemas).push_back(lexema);
+			std::get<std::vector<Lexema>>(indirectAddress.lexemas).emplace_back(lexema);
 		}
 		else
 		{
 			lexema.file = file;
 			lexema.line = line;
-			lexemas.push_back(lexema);
+			lexemas.emplace_back(lexema);
 		}
 	}
 

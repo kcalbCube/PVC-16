@@ -1,0 +1,108 @@
+.org 80h
+src: db "+++++++[>++++++++++>++++<<-]>++.>[<+>>+<<>-]<+.+++++++..+++.>>++++.<<++++++++.--------.+++.------.--------.[-]<+++[>+++++++++++<-]>."
+
+table:
+	db 0h db 3Eh dw @i1
+	db 0h db 3Ch dw @i2
+	db 0h db 2Bh dw @i3
+	db 0h db 2Dh dw @i4
+	db 0h db 5Dh dw @i5
+	db 0h db 2Eh dw @i6
+	db 0h db 5Bh dw @i7
+start: ; %a iptr %b dptr ;
+	.loop:
+		mov %cl [%a + @src]
+		cmp %cl 0h
+		cz jmp @.loop.break
+		mov %si 0h
+		.tloop:
+			mov %ch [4h * %si + {@table + 1h}]
+			cmp %cl %ch
+				ce 	push @.tloop.break
+				ce 	mov %ip [4h * %si + {@table + 2h}]
+			inc %si
+			cmp %si 8h
+			cl jmp @.tloop
+			.tloop.break:
+		inc %a
+		jmp @.loop
+		.loop.break: 
+	int 0h
+i1: ; > ; 
+	inc %b ret
+i2: ; < ; 
+	dec %b ret
+i3: ; + ;
+	push %el
+	mov %el [%b + @data]
+	inc %el
+	mov [%b + @data] %el
+	pop %el
+	ret
+i4: ; - ;
+	push %el
+	mov %el [%b + @data]
+	dec %el
+	mov [%b + @data] %el
+	pop %el
+	ret
+i5: ; ] ;
+	push %c
+	cmpb [%b + @data] 0h 
+	cz pop %c
+	cz ret
+	mov %c 0h
+	dec %a
+	.loop:
+		cmpb [%a + @src] 5Dh ; ']' ;
+		ce inc %c
+		cmpb [%a + @src] 5Bh ; '[' ;
+		cne jmp @.loop.2
+			cmp %c 0h
+			cz pop %c
+			cz ret
+			dec %c
+		.loop.2:
+		loop %a @.loop
+	.loop.break:
+	pop %c
+	ret
+i6: ; . ;
+	push %cl
+	outb E9h [%b + @data]
+	.wait:
+		inb %cl E9h
+		cmp %cl 0h
+		cne jmp @.wait
+	pop %cl
+	ret
+i7: ; [ ;
+	push %c
+	mov %c [%b + @data]
+	cmp %c 0h
+	cne jmp @.loop.break
+	mov %c 0h
+	.loop:
+		cmpb [%a + @src] 5Bh ; '[' ;
+		ce inc %c
+		cmpb [%a + @src] 5Dh ; ']' ;
+		cne jmp @.loop.2
+			cmp %c 0h
+			cz jmp @.loop.break
+				dec %c
+		.loop.2:
+		inc %a
+		jmp @.loop
+	.loop.break: 
+	pop %c 
+	ret
+trace:
+	push %cl
+	outb E9h [%a + @src]
+	.wait:
+		inb %cl E9h
+		cmp %cl 0h
+		cne jmp @.wait
+	pop %cl
+	ret
+data:

@@ -1,4 +1,4 @@
-.org 22h
+.org {11h * 2h}
 dw @vbi
 
 .org 80h
@@ -13,9 +13,9 @@ process:
 	add %ah %bh
 	add %al %bl
 	cmp %ah 11h
-	jng @.skip_xoverflow_handle
+	cng jmp @.skip_xoverflow_handle
 	cmp %ah 14h
-	jg @.overflow_left
+	cg jmp @.overflow_left
 	mov %ah 11h
 	jmp @.xoverflow_finally
 	.overflow_left:
@@ -24,9 +24,9 @@ process:
 		neg %bh
 	.skip_xoverflow_handle:
 	cmp %al 5Ch
-	jng @.skip_yoverflow_handle
+	cng jmp @.skip_yoverflow_handle
 	cmp %al 60h
-	jg @.overflow_up
+	cg jmp @.overflow_up
 	mov %al 5Bh
 	jmp @.yoverflow_finally
 	.overflow_up:
@@ -53,8 +53,7 @@ render:
 	.loop:
 		movb [%b] FFh
 		add %b 12h
-		dec %a
-		jnz @.loop
+		loop %a @.loop
 	
 	pop %b
 	pop %a
@@ -76,7 +75,7 @@ vbi:
 	memset [@T1] 3A98h 0h
 	call @render
 	call @process
-	rei
+	iret
 
 .org 1000h
 T1:

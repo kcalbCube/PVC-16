@@ -4,27 +4,20 @@
 #include "lexer.h"
 #include <ranges>
 #include <variant>
-
-struct LabelDefinition{ std::string label; };
-struct LabelUse{ std::string label; };
-
-struct Register{ std::string name; };
-struct Constant{ unsigned constant = 0; };
-struct String { std::string string; };
-struct Newline {};
+#include "utility.h"
 
 struct IndirectAddress
 {
 	Register base{}; 
 	Register index{}; 
 	uint8_t scale = 1; 
-	std::variant<Constant, LabelUse> disp;
+	std::variant<Constant, LabelUse, Expression> disp;
 };
 
 struct Mnemonic
 {
 	std::string name;
-	std::vector<std::variant<Register, Constant, LabelUse, IndirectAddress, String>> mnemonics;
+	std::vector<std::variant<Register, Constant, LabelUse, IndirectAddress, String, Expression>> mnemonics;
 
 	unsigned line = 0;
 	std::string file;
@@ -36,12 +29,14 @@ enum MnemonicIndex
 	MI_REGISTER,
 	MI_CONSTANT,
 	MI_LABELUSE,
-	MI_INDIRECT_ADDRESS
+	MI_INDIRECT_ADDRESS,
+	MI_STRING,
+	MI_EXPRESSION
 };
 
 enum MnemonicDescription
 {
-	REGISTER = 1, CONSTANT, LABEL, INDIRECT_ADDRESS, STRING
+	REGISTER = 1, CONSTANT, LABEL, INDIRECT_ADDRESS, STRING, EXPRESSION,
 };
 
 template<typename... Args>

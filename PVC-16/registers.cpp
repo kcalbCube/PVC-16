@@ -3,14 +3,20 @@ namespace registers
 {
 	namespace
 	{
-		union
+		union InternalRegister
 		{
+			uint_fast16_t u16fast;
 			uint16_t u16;
 			struct
 			{
 				uint8_t l, h;
 			};
 		} registers[AH];
+
+		InternalRegister& getRegister(const RegisterID rid)
+		{
+			return registers[static_cast<int>(rid)];
+		}
 	}
 
 	PackedStatus packStatus(void)
@@ -79,7 +85,7 @@ namespace registers
 
 	uint16_t& get16(const RegisterID id)
 	{
-		return registers[static_cast<size_t>(id)].u16;
+		return getRegister(id).u16;
 	}
 
 	uint8_t& get8(const RegisterID id)
@@ -88,5 +94,21 @@ namespace registers
 		const auto parent = static_cast<RegisterID>(idSubAH / 2);
 		const auto isH = !(idSubAH & 1);
 		return isH ? registers[parent].h : registers[parent].l;
+	}
+
+	void inc(const RegisterID id)
+	{
+		if(is16register(id))
+			++get16(id);
+		else
+			++get8(id);
+	}
+
+	void dec(const RegisterID id)
+	{
+		if(is16register(id))
+			--get16(id);
+		else
+			--get8(id);
 	}
 }

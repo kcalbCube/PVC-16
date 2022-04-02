@@ -6,6 +6,7 @@
 unsigned a16toi(const std::string& str);
 
 void error(const std::string& file, size_t line, const std::string& msg);
+void error(const std::string& msg);
 void warning(const std::string& file, size_t line, const std::string& msg);
 void warning(const std::string& file, const std::string& msg);
 void warning(const std::string& msg);
@@ -26,3 +27,11 @@ inline std::string curFile = ""; // fixme
 #define m1628(src) static_cast<uint8_t>(src), static_cast<uint8_t>((src) >> 8)
 #define m1628h(src) static_cast<uint8_t>(src)
 #define m1628l(src) static_cast<uint8_t>((src) >> 8)
+
+struct LabelDefinition{ std::string label; };
+struct LabelUse{ std::string label; };
+
+struct Register{ std::string name; };
+struct Constant{ unsigned constant = 0; };
+struct String { std::string string; };
+struct Newline {};

@@ -9,6 +9,7 @@ set(Header_Files
     "syntaxer.h"
     "tokenizer.h"
     "utility.h"
+    "eval.h"
 )
 source_group("Header Files" FILES ${Header_Files})
 
@@ -19,6 +20,7 @@ set(Source_Files
     "syntaxer.cpp"
     "tokenizer.cpp"
     "utility.cpp"
+    "eval.cpp"
 )
 source_group("Source Files" FILES ${Source_Files})
 

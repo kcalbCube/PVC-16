@@ -5,7 +5,7 @@
 #include "syntaxer.h"
 #include <string>
 #include "utility.h"
-
+#include "eval.h"
 #include "../PVC-16/opcode.h"
 
 class Compiler
@@ -13,22 +13,25 @@ class Compiler
 	std::map<std::string, uint16_t> symbols;
 	std::map<std::string, std::map<std::string, uint16_t>> localSymbols;
 	std::map<std::string, std::vector<uint16_t>> delayedSymbols;
+	std::vector<std::pair<Expression, uint16_t>> expressions;
 	std::string currentSymbol;
 
 	std::vector<uint8_t> data;
 	uint16_t ip = 0;
 
-	uint16_t* findLabel(const std::string& label);
-	void write(uint8_t data);
-	void write16(uint16_t data);
+	uint16_t* findLabel(const std::string&);
+	void write(uint8_t);
+	void write16(uint16_t);
 
-	void write(uint16_t ip, uint8_t data);
-	void write16(uint16_t ip, uint16_t data);
-	void writeLabel(const std::string& label);
-	void writeSIB(const Mnemonic& mnemonic, const IndirectAddress& ia);
+	void write(uint16_t, uint8_t);
+	void write16(uint16_t, uint16_t);
+	void writeLabel(const std::string&);
+	void writeLabels(Expression&);
+	void writeExpression(Expression);
+	void writeSIB(const Mnemonic&, const IndirectAddress&);
 
-	SIB generateSIB(const IndirectAddress& ia);
-	bool isDispPresent(const IndirectAddress& ia);
+	SIB generateSIB(const IndirectAddress&);
+	bool isDispPresent(const IndirectAddress&);
 
 	struct BadRegister : std::exception {};
 

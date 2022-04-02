@@ -6,8 +6,8 @@ wait:
 	.loop:
 		inb %cl E9h
 		cmp %cl 0h
-		jnz @.loop
-	ret
+		cz ret
+	jmp @.loop
 		
 start:
 	mov %sp 300h
@@ -17,5 +17,5 @@ start:
 		outb E9h %al
 		call @wait
 		cmp %al Ah
-		jnz @.loop
-	int 0h
+		ce int 0h
+	jmp @.loop

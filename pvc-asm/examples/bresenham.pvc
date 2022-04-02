@@ -1,6 +1,3 @@
-.org 22h
-dw @vbi
-
 .org 80h
 
 .include "stdvideo.inc"
@@ -8,9 +5,7 @@ dw @vbi
 ; %al, overwrites ;
 abs:
 	test %al 1h
-	jz @.L2
-	neg %al
-	.L2:
+	cnz neg %al
 	ret
 
 	
@@ -31,14 +26,10 @@ drawline:
 	mov %b FFFFh ; bh - signX, bl - signY ;
 	
 	cmp %ch %dh
-	jgz @.S1
-	neg %bh
-	.S1:
+	cl neg %bh
 	
 	cmp %cl %dl
-	jgz @.S2
-	neg %bl
-	.S2:
+	cl neg %bl
 	
 	mov %el %ah
 	add %el %al ; el - error ;
@@ -49,23 +40,18 @@ drawline:
 	 
 	.loop:
 		cmp %ch %dh
-		jnz @.L1
-		cmp %cl %dl
-		jnz @.L1
-		jmp @.loop_end
-		.L1:
-		
+		cz cmp %cl %dl
+		cz jmp @.loop_end
+
 		push %c
 		call @setpixelm1
 		pop %c
 		
 		cmp %el %al
-		jng @.L2
-			add %el %al
-			add %ch %bh
-		.L2: 
+		cg add %el %al
+		cg add %ch %bh
 		cmp %el %ah
-		jgz @.loop
+		cgz jmp @.loop
 			add %el %ah
 			add %cl %bl
 		jmp @.loop
@@ -94,9 +80,6 @@ start:
 
 	.loop:
 		jmp @.loop
-
-vbi:
-	ret
 
 .org 1000h
 T1:

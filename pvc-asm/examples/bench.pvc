@@ -1,0 +1,85 @@
+.org {11h * 2h}
+dw @pass
+.org 80h
+
+pass:
+	mov %a [%a]
+	mov [2h * %bp + %a + 0h] %a
+	mov [2h * %bp + %a + 0h] 0h
+	movb [2h * %bp + %a + 0h] 0h
+	mov [2h * %bp + %a + 0h] [2h * %bp + %a + 0h] 
+	movb [2h * %bp + %a + 0h] [2h * %bp + %a + 0h] 
+	add %a 0h
+	add %a %a
+	sub %a %a
+	sub %a 0h
+	div %a %c
+	div %a 1h
+	mul %a %a
+	mul %a 1h
+	lea %a [2h * %bp + %a + 0h]
+	inc %a
+	dec %a
+	cmp %a %a
+	cmp [2h * %bp + %a + 0h] 0h
+	cmp [2h * %bp + %a + 0h] %a
+	cmp [2h * %bp + %a + 0h] [2h * %bp + %a + 0h] 
+	cmpb [2h * %bp + %a + 0h] [2h * %bp + %a + 0h] 
+	cmp %a [2h * %bp + %a + 0h] 
+	cmpb [2h * %bp + %a + 0h] 0h
+	jmp @.1
+	.1:
+	call @.proc
+	push %a
+	pop %a
+	push 0h
+	pop
+	pushb 0h
+	popb [2h * %bp + %a + 0h]
+	pushb 0h
+	popb
+	pusha
+	popa
+	out 0h 0h
+	outb 0h 0h
+	out 0h %a
+	outb 0h [2h * %bp + %a + 0h]
+	out 0h [2h * %bp + %a + 0h]
+	in  [2h * %bp + %a + 0h] 0h
+	inb [2h * %bp + %a + 0h] 0h
+	in %a 0h
+	neg %a
+	pushf
+	popf
+	cli
+	sti
+	memset [@data] 1000h 0h
+	.2:
+	test %a 0h
+	and %a %a
+	or %a %a
+	shl %a %a
+	shr %a %a
+	mod %a %a
+	mod %a FFh
+
+	mov %a 10h
+	cmp %a 10h
+	ce mov %a %a
+	cne mov %a %a
+	nop
+	ce nop
+	cne nop
+	preinc1 nop
+	rei
+	.proc:	ret
+
+start:
+	mov %sp FFFFh
+	mov %e FFFFh
+	.loop:
+		int 11h
+		loop %e @.loop
+	int 0h
+
+data:

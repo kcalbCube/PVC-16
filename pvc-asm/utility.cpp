@@ -48,6 +48,12 @@ void warning(const std::string& msg)
 	++warnings;
 }
 
+void error(const std::string& msg)
+{
+	std::cerr << "error: " << msg << std::endl;
+	++errors;
+}
+
 size_t getErrorNumber(void)
 {
 	return errors;

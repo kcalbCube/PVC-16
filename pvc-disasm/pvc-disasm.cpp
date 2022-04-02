@@ -228,7 +228,8 @@ int main(int argc, char** args)
 			printf("%02X %04X\n", c1, c2);
 		}
 		break;
-
+		
+		case OPCODE_PREFIX:
 		case OPCODE:
 			printf("\n");
 			break;

@@ -1,134 +1,160 @@
 instructions
-	mov
-		mov  reg    reg
-		mov  reg    imm16
-		mov  reg    [addr]
-		mov  [addr] reg
-		mov  [addr] imm16
-		movb [addr] imm8
-		mov  [addr] [addr]
-		movb [addr] [addr]
-	add
-		add  reg    reg
-		add  reg    imm16
-	sub
-		sub  reg    reg
-		sub  reg    imm16
-	mul
-		mul  reg    reg 
-		mul  reg    imm16
-	div
-		div  reg    reg     #DE if second reg = 0h
-		div  reg    imm16   #DE if imm16      = 0h
-	lea
-		lea	 reg    [addr]
-	inc
-		inc	 reg
-	dec
-		dec	 reg
-	int
-		int  imm8           interrupt
-	cmp
-		cmp  reg    imm8
-		cmp  reg    reg 
-	jumps
-		jmp  		 	  imm16	
-		jz |je		 	  imm16				 	 Z 			 => x == y
-		jnz|jne 	 	  imm16				    !Z 			 => x != y
-		jg |jnle|jnlz 	  imm16          signed !Z && S == O => x >  y
-		jng|jle |jlz  	  imm16          signed  Z || S != O => x <= y
-		jgz|jnl |jge  	  imm16          signed  S == O 	 => x >= y
-		jl |jngz|jnge 	  imm16          signed	 S != O 	 => x <  y
-		jb |jnae|jnaz|jc  imm16		   unsigned	 O 			 => x <  y 
-		jbe|jbz |jna	  imm16        unsigned	 O || Z		 => x <= y
-		jnb|jae |jaz |jnc imm16        unsigned	!O 			 => x >= y
-		ja |jnbe|jnbz	  imm16		   unsigned	!S && !O 	 => x >  y
-		call			  imm16
-		
-	push
-		push reg
-		push imm16
-		pushb imm8
-		pusha               push all common registers
-	pop
-		pop	 reg
-		pop  [addr]
-		popb [addr]
-		pop
-		popb
-		popa                pop all common registers
-	out
-		outb imm8   [addr]
-		out  imm8   [addr]
-		out  imm8   reg
-		outb imm8   imm8
-		out  imm8   imm16
-	in
-		inb  [addr] imm8
-		in   [addr] imm8 
-		in   reg	imm8
-	neg
-		neg	 reg
-	ret
-		ret
-	memset
-		memset [addr] imm16 imm8
-	cli
-		cli                 sets interrupt flag to 0
-	sti
-		sti                 sets interrupt flag to 1
-	loop
-		loop reg    imm16
-	test
-		test reg    imm16
-		test reg    reg  
-	not
-		not	 reg
-	and
-		and	 reg    reg
-	or
-		or	 reg    reg
-	shl
-		shl	 reg    reg
-	shr
-		shr	 reg    reg
-	mod
-		mod	 reg    reg
-		mod  reg    imm16
-	xor
+    mov
+        mov  reg    reg
+        mov  reg    imm16
+        mov  reg    [addr]
+        mov  [addr] reg
+        mov  [addr] imm16
+        movb [addr] imm8
+        mov  [addr] [addr]
+        movb [addr] [addr]
+    add
+        add  reg    reg
+        add  reg    imm16
+    sub
+        sub  reg    reg
+        sub  reg    imm16
+    mul
+        mul  reg    reg 
+        mul  reg    imm16
+    div
+        div  reg    reg     #DE if second reg = 0h
+        div  reg    imm16   #DE if imm16      = 0h
+    lea
+        lea	 reg    [addr]
+    inc
+        inc	 reg
+    dec
+        dec	 reg
+    int
+        int  imm8           interrupt
+    cmp
+        cmp  reg    imm
+        cmp  reg    reg 
+        cmp  [addr] imm16
+        cmp  [addr] reg
+        cmp  [addr] [addr]
+        cmpb [addr] [addr]
+        cmp  reg    [addr]
+        cmpb [addr] imm8
+    jumps
+        jmp  		 	  imm16	
+        call			  imm16
+    condition prefixes
+        cz |ce		 	 					 	  Z 			=> x == y
+        cnz|cne 	 	  					     !Z 			=> x != y
+        cg |cnle|cnlz 	  		          signed !Z && S == O   => x >  y
+        cng|cle |clz  	                  signed  Z || S != O   => x <= y
+        cgz|cnl |cge  	                  signed  S == O 	    => x >= y
+        cl |cngz|cnge 	                  signed  S != O 	    => x <  y
+        cb |cnae|cnaz|cc                unsigned  O 			=> x <  y 
+        cbe|cbz |cna	                unsigned  O || Z		=> x <= y
+        cnb|cae |caz |cnc               unsigned !O 			=> x >= y
+        ca |cnbe|cnbz                   unsigned !S && !O 	    => x >  y
+    push
+        push reg
+        push imm16
+        pushb imm8
+        pusha               push all common registers
+    pop
+        pop	 reg
+        pop  [addr]
+        popb [addr]
+        pop
+        popb
+        popa                pop all common registers
+    out
+        outb imm8   [addr]
+        out  imm8   [addr]
+        out  imm8   reg
+        outb imm8   imm8
+        out  imm8   imm16
+    in
+        inb  [addr] imm8
+        in   [addr] imm8 
+        in   reg	imm8
+    neg
+        neg	 reg
+    ret
+        ret|res
+    rei						return from interrupt, eq to popf;ret
+        rei|iret
+    pushf
+        pushf
+    popf
+        popf
+    memset
+        memset [addr] imm16 imm8
+    cli
+        cli                 sets interrupt flag to 0
+    sti
+        sti                 sets interrupt flag to 1
+    loop
+        loop reg    imm16
+    test
+        test reg    imm16
+    not
+        not	 reg
+    and
+        and	 reg    reg
+    or
+        or	 reg    reg
+    shl
+        shl	 reg    reg
+    shr
+        shr	 reg    reg
+    mod
+        mod	 reg    reg
+        mod  reg    imm16
+    xor
 
-	reg = any register or its fraction.
-	labels = imm16
-	[addr] = indirect address.
+    reg = any register or its fraction.
+    labels = imm16
+    [addr] = indirect address.
 
 registers
-	common
-		A
-		B
-		C
-		D
-		E
-		SI
-	uncommon
-		BP
-		SP
-		IP
-	
+    common
+        A
+        B
+        C
+        D
+        E
+        SI
+    uncommon
+        BP
+        SP
+        IP
+    
 indirect address
-	indirect address = [base reg * scale + index reg + disp imm16]
-	base reg = BP or SP
-	index reg = common register, no fraction
-	scale = 0 | 2 | 4 | 8
-	At least one element should be present
+    indirect address = [scale * index reg + base reg + disp imm16]
+    base reg = BP or SP
+    index reg = common register, no fraction
+    scale = 0 | 2 | 4 | 8
+    At least one element should be present
 
 interrupts
-	interrupt - 0h-FFh imm8
-	int x = call interrupttable[x*2]
-	interrupttable are placed in 0h address
-	
-	Interrupt flag blocks generating interrupts if zero, boths from devices and int opcode.
-	
-	#HALT   int 0h
-	#DE     int 1h
-	#VC     int 10h	videocontroller
-	#VBI    int 11h videocontroller
+    interrupt - 0h-FFh imm8
+    int x = call interrupttable[x*2]
+    interrupttable are placed in zp:0h address
+    
+    Interrupt flag blocks generating interrupts if zero, boths from devices and int opcode.
+    
+    #HALT   int 0h
+    #DE     int 1h
+    #VC     int 10h	CPU->videocontroller
+    #VBI    int 11h videocontroller->CPU
+
+pvc-asm allows to use expressions
+    .org {10h * 2h}
+    mov [%si + {@.1 + 2h}] %a
+    and %al {1h << 7h}
+    ...
+
+condition prefixes are defining condition of execution next instruction
+    cmp %al 0h
+    ce jmp @* can be readed as je @*
+    ...
+    not executed instruction wouldnt be fetched
+    ?more plain code are more cache-friendly
+
+30 MHz?

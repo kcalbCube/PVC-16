@@ -51,7 +51,7 @@ void DebugOutputDevice::process(void)
 {
 	if (auto ch = busRead(BUS_DOUT); ch)
 	{
-		putchar(ch);
+		std::cout << (char)ch << std::flush;
 		busWrite(BUS_DOUT, 0);
 	}
 }

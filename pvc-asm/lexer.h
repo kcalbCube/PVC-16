@@ -2,6 +2,7 @@
 #include <variant>
 #include <vector>
 #include "tokenizer.h"
+#include "eval.h"
 
 enum class LexemID
 {
@@ -13,13 +14,14 @@ enum class LexemID
 	LABEL_USE,
 	REGISTER,
 	STRING,
-	NEWLINE
+	NEWLINE,
+	EXPR,
 };
 
 struct Lexema
 {
 	LexemID id;
-	std::variant<std::vector<Lexema>, unsigned, std::string> lexemas;
+	std::variant<std::vector<Lexema>, unsigned, std::string, Expression> lexemas;
 
 	std::string file;
 	unsigned line = 0;

@@ -6,31 +6,31 @@ void MemoryController::fill(const uint8_t tofill)
 	std::fill(std::begin(data), std::end(data), tofill);
 }
 
-void MemoryController::write8(const addr_t addr, const uint8_t towrite)
+void MemoryController::write8(const addr_t addr, const uint_fast8_t towrite)
 {
-	data[addr] = towrite;
+	data[addr] = towrite & 0xFF;
 }
 
-void MemoryController::write16(const addr_t addr, const uint16_t towrite)
+void MemoryController::write16(const addr_t addr, const uint_fast16_t towrite)
 {
 	using T = struct { uint8_t h, l; };
-	const auto [h, l] = std::bit_cast<T>(towrite);
+	const auto [h, l] = std::bit_cast<T>(static_cast<uint16_t>(towrite));
 	write8(addr		, h);
 	write8(addr + 1 , l);
 
 }
 
-uint8_t MemoryController::read8(const addr_t addr) const
+uint_fast8_t MemoryController::read8(const addr_t addr) const
 {
-	return data[addr];
+	return data[addr] & 0xFF;
 }
 
-uint16_t MemoryController::read16(const addr_t addr) const
+uint_fast16_t MemoryController::read16(const addr_t addr) const
 {
-	return static_cast<uint16_t>(read8(addr) | (read8(addr + 1) << 8));
+	return (read8(addr) | (read8(addr + 1) << 8)) & 0xFFFF;
 }
 
-size_t MemoryController::readInRegister(const addr_t addr, const registers::RegisterID reg) const
+int MemoryController::readInRegister(const addr_t addr, const registers::RegisterID reg) const
 {
 	return is16register(reg) ?
 		       (registers::write(reg, read16(addr)), 2)
