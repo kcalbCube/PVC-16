@@ -67,11 +67,14 @@ target_link_libraries(${PROJECT_NAME} PRIVATE "SDL2")
 ################################################################################
 if(TRUE)
     target_compile_options(${PROJECT_NAME} PRIVATE
-        -std=c++2b
+        -std=gnu++2b
         -flto
-        -O3
+        -Ofast
+	-Wall
+	-fmodulo-sched
+	-fmodulo-sched-allow-regmoves
+	-fcf-protection=none
         -march=native
-        -mfpmath=sse
         ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT}
         ${DEFAULT_CXX_EXCEPTION_HANDLING}
     )

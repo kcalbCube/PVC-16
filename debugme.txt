@@ -1,10 +1,7 @@
-#define _DEBUG
+edit vmflags.h, mutility.h
 ||
 \/
 -O0
 ||
 \/
 gdb
-||
-\/
-b s s s s s s s s s s s s s s s s s s s s s s s s s s s s s s s s s s s s s s s s

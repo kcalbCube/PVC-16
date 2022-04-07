@@ -94,7 +94,7 @@ void start(void)
 	unsigned long long ops = 0;
 	const auto start = std::chrono::high_resolution_clock::now();
 #endif
-	while (!interrupts::isHalted)
+	while (!interrupts::isHalted())
 	{
 		interrupts::handleDelayedInterrupts();
 		decoder.process();
@@ -108,6 +108,7 @@ void start(void)
 		((static_cast<long double>(ops) / (static_cast<long double>(microseconds) / 1e6)) / 1e6) << " MHz )" << std::endl;
 #endif
 	registersDump();
+#ifdef ENABLE_OPCODE_STATISTICS
 	if(vmflags.captureOpcodeStatistics)
 	{
 		struct StatisticsElementMultiple
@@ -144,6 +145,7 @@ void start(void)
 			printf("%-10d %04X %12s %6d\n", count, prefixes, name.c_str(), nanosec);
 		}
 	}
+#endif
 }
 void interactive(void)
 {
@@ -207,9 +209,6 @@ int main(int argc, char** argv)
 #ifdef ENABLE_WORKFLOW
 	args::Flag workflow(debug, "dworkflow", "Enables workflow", { "dworkflow" });
 #endif
-#ifdef ENABLE_EXECUTION_TIME_CAPTURE
-	args::Flag executionTimeCapture(debug, "dexectime", "Captures execution time", { "dexectime" });
-#endif
 #ifdef ENABLE_OPCODE_STATISTICS
 	args::Flag statistics(debug, "dstatistics", "Enables opcode statistics", { "dstatistics" });
 #endif
@@ -239,9 +238,6 @@ int main(int argc, char** argv)
 	
 #ifdef ENABLE_WORKFLOW
 	vmflags.workflowEnabled = workflow;
-#endif
-#ifdef ENABLE_EXECUTION_TIME_CAPTURE
-	vmflags.captureExecutionTime = executionTimeCapture;
 #endif
 #ifdef ENABLE_OPCODE_STATISTICS
 	vmflags.captureOpcodeStatistics = statistics;

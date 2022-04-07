@@ -4,12 +4,12 @@
 
 // TODO: move to bus namespace
 constexpr size_t busSize = 0xFF + 1;
-inline uint8_t bus[busSize]{0};
+inline uint_fast8_t bus[busSize]{};
 
-void busWrite(size_t addr, uint8_t value);
-void busWrite16(size_t addr, uint16_t value);
-uint8_t busRead(size_t addr);
-uint16_t busRead16(size_t addr);
+void busWrite(int addr, uint_fast8_t value);
+void busWrite16(int addr, uint_fast16_t value);
+uint_fast8_t busRead(int addr);
+uint_fast16_t busRead16(int addr);
 
 enum
 {

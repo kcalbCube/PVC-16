@@ -77,6 +77,8 @@ void VideoController::setVideoMode(VideoMode vmode)
 		SDL_RenderSetScale(renderer, 4.f, 4.f);
 	}
 	break;
+	default:
+		UNREACHABLE;
 	}
 
 	modeSet = vmode;

@@ -1,5 +1,4 @@
 #pragma once
-
 #ifndef _DEBUG
 #if defined(_MSC_VER)
 #define UNREACHABLE __assume(0)

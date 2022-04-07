@@ -1,11 +1,13 @@
 #include "registers.h"
+#include "mutility.h"
+
 namespace registers
 {
 	namespace
 	{
 		union InternalRegister
 		{
-			uint_fast16_t u16fast;
+			uint_fast16_t u16fast = 0;
 			uint16_t u16;
 			struct
 			{
@@ -61,6 +63,8 @@ namespace registers
 
 	void write(const RegisterID id, const uint16_t value, const bool shouldUpdateStatus)
 	{
+		if(id >= NO_REG)
+			UNREACHABLE;
 		if (is16register(id))
 		{
 			if (shouldUpdateStatus)
@@ -75,9 +79,10 @@ namespace registers
 
 	uint16_t read(const RegisterID id)
 	{
-		if (id >= NO_REG)
+		if (id == NO_REG)
 			return 0;
-
+		if (id > NO_REG)
+			UNREACHABLE;
 		if (is16register(id))
 			return get16(id);
 		return get8(id);
@@ -85,11 +90,15 @@ namespace registers
 
 	uint16_t& get16(const RegisterID id)
 	{
+		if(id >= NO_REG)
+			UNREACHABLE;
 		return getRegister(id).u16;
 	}
 
 	uint8_t& get8(const RegisterID id)
 	{
+		if(id >= NO_REG)
+			UNREACHABLE;
 		const auto idSubAH = id - AH;
 		const auto parent = static_cast<RegisterID>(idSubAH / 2);
 		const auto isH = !(idSubAH & 1);

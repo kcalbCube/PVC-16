@@ -1,25 +1,23 @@
 #include "bus.h"
 #include "utility.h"
-//uint8_t bus[busSize];
-//bool busWrites[busSize / busSector];
 
-void busWrite(size_t addr, uint8_t value)
+void busWrite(int addr, uint_fast8_t value)
 {
-	bus[addr] = value;
+	bus[addr] = value & 0xFF;
 }
 
-void busWrite16(size_t addr, uint16_t value)
+void busWrite16(int addr, uint_fast16_t value)
 {
 	busWrite(addr    , m1628h(value));
 	busWrite(addr + 1, m1628l(value));
 }
 
-uint8_t busRead(size_t addr)
+uint_fast8_t busRead(int addr)
 {
-	return bus[addr];
+	return bus[addr] & 0xFF;
 }
 
-uint16_t busRead16(size_t addr)
+uint_fast16_t busRead16(int addr)
 {
-	return static_cast<uint16_t>(busRead(addr) | (busRead(addr + 1) << 8));
+	return (busRead(addr) | (busRead(addr + 1) << 8));
 }

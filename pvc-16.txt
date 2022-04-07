@@ -157,4 +157,4 @@ condition prefixes are defining condition of execution next instruction
     not executed instruction wouldnt be fetched
     ?more plain code are more cache-friendly
 
-30 MHz?
+70 MHz?

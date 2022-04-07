@@ -14,8 +14,9 @@ namespace interrupts
 		VBI
 	};
 
-	inline bool isHalted = false;
+	bool isHalted(void);
 
+	inline bool isHaltedi = false;
 	void interrupt(uint8_t interrupt);
 
 	// you should use it from devicecontroller thread, lock it otherwise.

@@ -1,9 +1,15 @@
 ﻿#include "interrupt.h"
 #include "device.h"
 #include "stack.h"
+#include <queue>
 
 namespace interrupts
 {
+	bool isHalted(void)
+	{
+		return isHaltedi;
+	}
+
 	void interrupt(const uint8_t interrupt)
 	{
 		if (!registers::status.interrupt)
@@ -12,7 +18,7 @@ namespace interrupts
 		switch (interrupt)
 		{
 		case HALT:
-			isHalted = true;
+			isHaltedi = true;
 			break;
 
 		case VIDEOCONTROLLER:
@@ -37,22 +43,20 @@ namespace interrupts
 		}
 	}
 
-	std::deque<uint8_t> delayedInterrupts;
+	std::queue<uint8_t> delayedInterrupts;
 
 	void delayedInterrupt(uint8_t interrupt)
 	{
 		if (registers::status.interrupt)
-			delayedInterrupts.push_back(interrupt);
+			delayedInterrupts.emplace(interrupt);
 	}
 
 	void handleDelayedInterrupts(void)
 	{
-		if (!registers::status.interrupt)
-			delayedInterrupts.clear();
-		else if (!delayedInterrupts.empty())
+		if (!delayedInterrupts.empty()) [[unlikely]]
 		{
-			interrupt(delayedInterrupts[0]);
-			delayedInterrupts.pop_front();
+			interrupt(delayedInterrupts.front());
+			delayedInterrupts.pop();
 		}
 	}
 }

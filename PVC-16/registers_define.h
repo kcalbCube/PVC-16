@@ -10,7 +10,7 @@
 
 namespace registers
 {
-	enum RegisterID : unsigned
+	enum RegisterID
 	{
 		REGISTERS_LIST,
 		LREGISTERS_LIST,

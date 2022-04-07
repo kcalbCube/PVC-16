@@ -2,13 +2,13 @@
 #include <cstdint>
 #include "registers.h"
 
-using addr_t = uint_fast16_t;
+using addr_t = uint_fast32_t;
 
-constexpr auto ramSize = 0xFFFF;
+constexpr auto ramSize = 0xFFFF * 0xFF + 0xFFFF;
 class MemoryController
 {
 public:
-	uint_fast8_t data[ramSize]{0};
+	uint_fast8_t data[ramSize]{};
 
 	void fill(uint8_t);
 
