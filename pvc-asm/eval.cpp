@@ -118,8 +118,8 @@ Expression::Expression(const std::vector<Lexema>& lexemas)
 		{"~", Operation::NOT},
 		{"&", Operation::AND},
 		{"|", Operation::OR},
-		{"<<", Operation::SHL},
-		{">>", Operation::SHR},
+		{"<", Operation::SHL},
+		{">", Operation::SHR},
 	};
 
 	for(auto&& lexema : lexemas)

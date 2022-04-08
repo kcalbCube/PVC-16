@@ -68,3 +68,7 @@ resetpixelm1:
 	pop %b
 	pop %a
 	ret
+
+clsm1:
+	memset [@T1] 3A98h 0h
+	ret

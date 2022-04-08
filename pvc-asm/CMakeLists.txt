@@ -10,6 +10,7 @@ set(Header_Files
     "tokenizer.h"
     "utility.h"
     "eval.h"
+    "macro.h"
 )
 source_group("Header Files" FILES ${Header_Files})
 
@@ -21,6 +22,7 @@ set(Source_Files
     "tokenizer.cpp"
     "utility.cpp"
     "eval.cpp"
+    "macro.cpp"
 )
 source_group("Source Files" FILES ${Source_Files})
 
@@ -54,7 +56,7 @@ if(TRUE)
     target_compile_options(${PROJECT_NAME} PRIVATE
         -std=c++20
         -flto
-        -O3
+        -Og
         -march=native
         -mfpmath=sse
         ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT}

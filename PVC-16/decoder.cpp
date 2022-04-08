@@ -282,6 +282,45 @@ void Decoder::processRC(Opcode opcode, registers::RegisterID r1, uint_fast16_t c
 		break;
 	}
 
+	case AND_RC:
+		if (is16register(r1))
+		{
+			auto&& r = get16(r1);
+			r = registers::updateStatus16(static_cast<unsigned>(r) & constant);
+		}
+		else
+		{
+			auto&& r = get8(r1);
+			r = registers::updateStatus8(static_cast<unsigned>(r) & constant);
+		}
+		break;
+
+	case OR_RC:
+		if (is16register(r1))
+		{
+			auto&& r = get16(r1);
+			r = registers::updateStatus16(static_cast<unsigned>(r) | constant);
+		}
+		else
+		{
+			auto&& r = get8(r1);
+			r = registers::updateStatus8(static_cast<unsigned>(r) | constant);
+		}
+		break;
+
+	case XOR_RC:
+		if (is16register(r1))
+		{
+			auto&& r = get16(r1);
+			r = registers::updateStatus16(static_cast<unsigned>(r) ^ constant);
+		}
+		else
+		{
+			auto&& r = get8(r1);
+			r = registers::updateStatus8(static_cast<unsigned>(r) ^ constant);
+		}
+		break;
+
 	case OUT_R:
 		if (is16register(r1))
 			busWrite16(constant, get16(r1));

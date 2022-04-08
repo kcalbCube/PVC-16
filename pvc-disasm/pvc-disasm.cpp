@@ -20,10 +20,10 @@ int main(int argc, char** args)
     args::CompletionFlag completion(parser, { "complete" });
     args::ValueFlag<std::string> output(parser, "output", "Output file", { 'o', "output" });
     args::Positional<std::string> inputFile(parser, "input", "The input file");
-    args::ValueFlag<std::string> label(parser, "label", "Label to start disasm", { 'l', "label" });
+    args::ValueFlag<std::string> label(parser, "label", "start label", { 'l', "label" });
     args::ValueFlag<size_t> numBytes(parser, "numbytes", "Bytes to disasm", { 'n', "numbytes" });
     args::ValueFlag<size_t> startByte(parser, "start", "Start byte", { 's', "start" });
-    args::Flag dumpLabels(parser, "dumplabels", "Dump labels from file", { 'l', "labels"});
+    args::Flag dumpLabels(parser, "dumplabels", "Dump labels from file", { "labels"});
 
     try
     {
@@ -46,6 +46,11 @@ int main(int argc, char** args)
         return 1;
     }
     std::string fileName = args::get(inputFile);
+    if(fileName.empty())
+    {
+	    std::cout << "No input file specified.\n";
+	    return 0;
+    }
     std::ifstream input(fileName, std::ios::binary);
 
     auto string_split = [](const std::string& s, const char* delimiter) -> std::vector<std::string>

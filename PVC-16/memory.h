@@ -4,7 +4,7 @@
 
 using addr_t = uint_fast32_t;
 
-constexpr auto ramSize = 0xFFFF * 0xFF + 0xFFFF;
+constexpr auto ramSize = 0xFFFF;
 class MemoryController
 {
 public:

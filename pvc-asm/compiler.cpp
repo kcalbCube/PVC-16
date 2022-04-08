@@ -193,7 +193,28 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 {
 	if(mnemonic.name == "NOP")
 	{
-		subcompileMnemonic(mnemonic, {{constructDescription(), NOP}});
+		if(auto desc = mnemonic.describeMnemonics();
+			desc == constructDescription(CONSTANT) ||
+			desc == constructDescription(EXPRESSION))
+		{
+			int n = 0;
+			if(desc == constructDescription(EXPRESSION))
+			{
+				auto&& expression = std::get<Expression>(mnemonic.mnemonics[0]);
+				if(!expression.isConstexpr())
+				{
+					error(mnemonic.file, mnemonic.line, "Cannot evaluate expression");
+					return;
+				}
+				n = expression.evaluate();
+			}
+			else
+				n = std::get<Constant>(mnemonic.mnemonics[0]).constant;
+			for(int i = 0; i < n; ++i)
+				subcompileMnemonic(Mnemonic("NOP", {}, mnemonic.line, mnemonic.file), {{constructDescription(), NOP}});
+		}
+		else
+			subcompileMnemonic(mnemonic, {{constructDescription(), NOP}});
 	}
 	else if(mnemonic.name == "INT")
 	{
@@ -229,24 +250,32 @@ void Compiler::compileMnemonic(Mnemonic mnemonic)
 	{
 		subcompileMnemonic(mnemonic, {
 		{constructDescription(REGISTER, REGISTER), SHL_RR},
+		{constructDescription(REGISTER, CONSTANT), SHL_RC},
+		{constructDescription(REGISTER, EXPRESSION), SHL_RC},
 			});
 	}
 	else if (mnemonic.name == "SHR")
 	{
 		subcompileMnemonic(mnemonic, {
 		{constructDescription(REGISTER, REGISTER), SHR_RR},
+		{constructDescription(REGISTER, CONSTANT), SHR_RC},
+		{constructDescription(REGISTER, EXPRESSION), SHR_RC},
 			});
 	}
 	else if (mnemonic.name == "OR")
 	{
 		subcompileMnemonic(mnemonic, {
 		{constructDescription(REGISTER, REGISTER), OR_RR},
+		{constructDescription(REGISTER, CONSTANT), OR_RC},
+		{constructDescription(REGISTER, EXPRESSION), OR_RC},
 			});
 	}
 	else if (mnemonic.name == "AND")
 	{
 		subcompileMnemonic(mnemonic, {
 		{constructDescription(REGISTER, REGISTER), AND_RR},
+		{constructDescription(REGISTER, CONSTANT), AND_RC},
+		{constructDescription(REGISTER, EXPRESSION), AND_RC} 
 			});
 	}
 	else if(mnemonic.name == "ADD")
@@ -525,7 +554,8 @@ CONSTRUCT_PREFIX(CNCR, CNCR);
 	else if (mnemonic.name == "TEST")
 	{
 	subcompileMnemonic(mnemonic, {
-			{constructDescription(REGISTER, CONSTANT), TEST_RC}
+			{constructDescription(REGISTER, CONSTANT), TEST_RC},
+			{constructDescription(REGISTER, EXPRESSION), TEST_RC},
 			});
 	}
 	else
@@ -595,37 +625,6 @@ void Compiler::compile(std::vector<SyntaxUnit>& syntax)
 									[&](auto) -> void { error(mnemonic.file, mnemonic.line, "bad dw argument."); }
 								}, v);
 						}
-					else if (mnemonic.name == ".INCLUDE")
-					{
-						if (mnemonic.describeMnemonics() == constructDescription(STRING))
-						{
-							auto&& includeFile = findInclude(std::get<String>(mnemonic.mnemonics[0]).string);
-							if (includeFile.empty())
-							{
-								error(mnemonic.file, mnemonic.line, "include file not found.");
-								return;
-							}
-							curFile = includeFile;
-
-							std::ifstream input(includeFile);
-							std::string source;
-							reserveLines(includeFile);
-
-							std::getline(input, source, '\0');
-							input.clear();
-							input.seekg(0, std::ios::beg);
-
-							while (std::getline(input, getNextLine(includeFile)));
-
-							auto tokens = Tokenizer::tokenize(source);
-							auto lexemas = Lexer::lex(tokens);
-							auto syntaxis = Syntaxer::syntaxParse(lexemas);
-							syntax.erase(std::begin(syntax) + i);
-							syntax.insert(std::begin(syntax) + i--, std::begin(syntaxis), std::end(syntaxis));
-						}
-						else
-							error(mnemonic.file, mnemonic.line, "bad include argument.");
-					}
 					else
 						compileMnemonic(mnemonic);
 				},
@@ -679,7 +678,12 @@ void Compiler::writeInOstream(std::ostream& output)
 
 	char buffer[128];
 	std::string syms;
-	for (auto&& [label, address] : symbols)
+
+	std::vector<std::pair<std::string, uint16_t>> symbolsd;
+	std::transform(symbols.begin(), symbols.end(), std::back_inserter(symbolsd), [](auto&& a) -> auto { return a; } );
+	std::ranges::sort(symbolsd, [](const auto& a, const auto& b) -> bool {return a.second > b.second; } );
+
+	for (auto&& [label, address] : symbolsd)
 	{
 		sprintf(buffer, "%s:%04X;", label.c_str(), address);
 		syms += buffer;

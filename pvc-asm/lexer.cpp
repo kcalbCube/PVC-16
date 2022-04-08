@@ -76,7 +76,7 @@ std::vector<Lexema> Lexer::lex(const std::vector<Token>& tokens)
 		}
 		else if ([](auto token) -> bool 
 		{ 
-			for(auto&& c : {"+", "-", "*", "/", "%", "<<", ">>", "^", "|", "&", "~", "(", ")"}) 
+			for(auto&& c : {"+", "-", "*", "/", "%", "<", ">", "^", "|", "&", "~", "(", ")"}) 
 				if(token == c) 
 					return true;
 			return false;

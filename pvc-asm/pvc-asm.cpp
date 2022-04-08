@@ -7,6 +7,7 @@
 #include "tokenizer.h"
 #include <args.hxx>
 #include <chrono>
+#include "macro.h"
 
 using namespace std::literals;
 
@@ -57,8 +58,11 @@ int main(const int argc, char** args)
 
 	input.close();
 
-
 	auto tokens   = Tokenizer::tokenize(source);
+
+	Macro macroProcessor;
+	macroProcessor.process(tokens);
+
 	auto lexemas  = Lexer::lex(tokens);
 	auto syntaxis = Syntaxer::syntaxParse(lexemas);
 
