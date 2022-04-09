@@ -1,0 +1,139 @@
+.set XSIZE 96h
+.set YSIZE 68h
+.org {11h * 2h}
+dw @vbi
+
+.org 80h
+
+.include "stdvideo.inc"
+process:
+	mov %cl YSIZE
+	.loopy:
+		mov %ch XSIZE
+		.loopx:
+			call @processCell
+			loop %ch @.loopx 
+		loop %cl @.loopy
+	ret
+
+processCell:
+	mov %d 0h
+	mov %bl 3h
+	.loopy:
+		mov %bh 3h
+		.loopx:
+			mov %e %c
+			add %e %b 
+			sub %e 0202h
+
+			cmp %e %c
+			ce jmp @.xskip
+
+			push %e
+			mov %bp %sp
+			call @index2rel
+			pop %e
+
+			cmpb [%e + @data] 0h
+			cg inc %d
+			.xskip:
+			loop %bh @.loopx
+		loop %bl @.loopy
+	
+	push %c
+	mov %bp %sp
+	call @index2rel
+	pop %e
+	mov %al [%e + @data]
+
+	movb [%e + @ndata] 0h
+	cmp %al 0h
+	cz jmp @.dead
+		cmp %d 2h
+		cl ret
+		cmp %d 3h
+		cg ret
+		movb [%e + @ndata] 1h
+	ret
+	.dead:
+		cmp %d 3h
+		ce movb [%e + @ndata] 1h
+	ret
+
+index2rel: ; l - y, h - x ;
+	;push %a;
+	push %b
+	mov %a [%bp]
+
+	mod %al YSIZE
+	mod %ah XSIZE
+	mov %b %al
+	mul %b XSIZE
+	add %b %ah
+
+	mov [%bp] %b
+	pop %b
+	;pop %a;
+	ret
+
+fill:
+	mov %c {XSIZE * YSIZE}
+	.loop:
+		mov %b %c
+		mod %b 100h
+		div %b 8h
+		add %b 80h
+		mov %al [%b]
+		mov %b %c
+		mod %b 8h
+		mov %e 1h
+		shl %e %b
+		and %al %el
+		cnz movb [%c + @data] 1h
+		loop %c @.loop
+	ret
+render:
+ 	call @clsm1
+	mov %cl YSIZE 
+	.loopy:
+		mov %ch XSIZE
+		.loopx:
+			push %c
+			mov %bp %sp
+			call @index2rel
+			pop %e
+			cmpb [%e + @data] 1h
+			cge push %c
+			cge call @setpixelm1
+			cge pop
+			loop %ch @.loopx
+		loop %cl @.loopy
+	ret
+start:
+	mov %sp FFFFh
+	outb 20h 1h
+	outb 21h 8h
+	out  22h @T1
+
+	mov %al 1h 
+	int 10h
+
+	call @fill
+
+	.loop:
+		jmp @.loop
+vbi:
+	cli
+	call @render
+	call @process
+	mov %c {XSIZE * YSIZE}
+	.loop:
+		movb [%c + @data] [%c + @ndata]
+		loop %c @.loop
+	rei
+T1:
+.org {3AAAh + @T1}
+data:
+.org {XSIZE * YSIZE + @data}
+ndata:
+.org {XSIZE * YSIZE + @ndata}
